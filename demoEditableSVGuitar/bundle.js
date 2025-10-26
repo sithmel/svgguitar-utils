@@ -35,6 +35,7 @@ var EditableSVGuitarChord = class {
     if (typeof document !== "undefined") {
       this.createControls();
     }
+    this.addCustomCSS();
   }
   /**
    * Create controls and containers
@@ -163,6 +164,7 @@ var EditableSVGuitarChord = class {
     const { fingers } = this.chordConfig;
     let maxFret = 0;
     for (const [, fret] of fingers) {
+      if (typeof fret === "string") continue;
       if (fret > maxFret) {
         maxFret = fret;
       }
@@ -213,6 +215,21 @@ var EditableSVGuitarChord = class {
             text: ""
           }];
           placeholders.push(placeholder);
+        }
+      }
+    }
+    for (let string = 1; string <= 6; string++) {
+      const openString = fingers.some(([s2, f2]) => s2 === string && f2 === 0);
+      const noPlayString = fingers.some(([s2, f2]) => s2 === string && f2 === "x");
+      if (!openString && !noPlayString) {
+        const placeholder = [string, 0];
+        placeholders.push(placeholder);
+        if (this.svgContainer) {
+          this.svgContainer.classList.add(`hide-open-string-${string - 1}`);
+        }
+      } else {
+        if (this.svgContainer) {
+          this.svgContainer.classList.remove(`hide-open-string-${string - 1}`);
         }
       }
     }
@@ -335,15 +352,15 @@ var EditableSVGuitarChord = class {
     const arrowY = Math.max(20, Math.min(dialogHeight - 20, dotY - dialogY));
     this.dialog.classList.add(`arrow-${side}`);
     this.dialog.style.setProperty("--arrow-y", `${arrowY}px`);
-    this.ensureArrowCSS();
   }
   /**
    * Ensure arrow CSS rules are added to the document
    */
-  ensureArrowCSS() {
+  addCustomCSS() {
+    if (typeof document === "undefined") return;
     if (document.getElementById("editable-svguitar-arrow-styles")) return;
     const style = document.createElement("style");
-    style.id = "editable-svguitar-arrow-styles";
+    style.id = "editable-svguitar-custom-CSS";
     style.textContent = `
       .editable-svguitar-dialog.arrow-left::after {
         content: '';
@@ -368,7 +385,16 @@ var EditableSVGuitarChord = class {
         border-left-color: white;
         transform: translateY(-50%);
       }
-    `;
+      .editable-svguitar-svg.hide-open-string-0 .open-string-0,
+      .editable-svguitar-svg.hide-open-string-1 .open-string-1,
+      .editable-svguitar-svg.hide-open-string-2 .open-string-2,
+      .editable-svguitar-svg.hide-open-string-3 .open-string-3,
+      .editable-svguitar-svg.hide-open-string-4 .open-string-4,
+      .editable-svguitar-svg.hide-open-string-5 .open-string-5 {
+        stroke: transparent !important;
+        fill: transparent !important;
+      }
+      `;
     document.head.appendChild(style);
   }
   /**

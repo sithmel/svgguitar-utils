@@ -136,16 +136,22 @@ describe('EditableSVGuitarChord (Core Functionality)', () => {
     const emptyChord = { fingers: [], barres: [] };
     const chordWithPlaceholders = editableChord.addPlaceholderDots(emptyChord);
     
-    // Should have placeholders for all 6 strings x 4 frets (0-3) = 24 positions
+    // Should have placeholders for all 6 strings x 3 frets (1-3) + 6 fret 0 placeholders = 24 positions
     assert.equal(chordWithPlaceholders.fingers.length, 24);
     
-    // Check we have all combinations
+    // Check we have all combinations for frets 1-3
     for (let string = 1; string <= 6; string++) {
-      for (let fret = 0; fret <= 3; fret++) {
+      for (let fret = 1; fret <= 3; fret++) {
         const placeholder = chordWithPlaceholders.fingers.find(([s, f]) => s === string && f === fret);
         assert.ok(placeholder, `Should have placeholder for string ${string}, fret ${fret}`);
         assert.equal(placeholder[2].color, 'transparent');
       }
+    }
+    
+    // Check we have fret 0 placeholders for all strings
+    for (let string = 1; string <= 6; string++) {
+      const placeholder = chordWithPlaceholders.fingers.find(([s, f]) => s === string && f === 0);
+      assert.ok(placeholder, `Should have placeholder for string ${string}, fret 0`);
     }
   });
 
@@ -162,8 +168,8 @@ describe('EditableSVGuitarChord (Core Functionality)', () => {
     
     const chordWithPlaceholders = editableChord.addPlaceholderDots(chordWithFingers);
     
-    // Should have 2 original fingers + (6 strings * 3 frets - 2 existing) placeholders
-    const expectedPlaceholders = (6 * 3) - 2;
+    // Should have 2 original fingers + (6 strings * 2 frets - 2 existing) placeholders + 6 fret 0 placeholders
+    const expectedPlaceholders = (6 * 2) - 2 + 6;
     const expectedTotal = 2 + expectedPlaceholders;
     assert.equal(chordWithPlaceholders.fingers.length, expectedTotal);
     
