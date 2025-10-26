@@ -1,6 +1,6 @@
 /**
  * @typedef {any} SVGuitarChord
- * @typedef {[number, number, {text?: string, color?: string, className?: string}?]} FingerPosition
+ * @typedef {[number, number | 'x', {text?: string, color?: string, className?: string}?]} FingerPosition
  * @typedef {{fingers: FingerPosition[], barres: any[], frets?: number}} ChordConfig
  * @typedef {{text?: string, color?: string, className?: string}} FingerOptions
  */
@@ -91,6 +91,11 @@ export class EditableSVGuitarChord {
      */
     handleDotClick(circleElement: Element): void;
     /**
+     * Handle click on an open string element
+     * @param {Element} openStringElement
+     */
+    handleOpenStringClick(openStringElement: Element): void;
+    /**
      * Add a new dot at the specified position
      * @param {number} string
      * @param {number} fret
@@ -124,7 +129,7 @@ export class EditableSVGuitarChord {
     /**
      * Ensure arrow CSS rules are added to the document
      */
-    ensureArrowCSS(): void;
+    addCustomCSS(): void;
     /**
      * Close the edit dialog
      */
@@ -166,7 +171,7 @@ export class EditableSVGuitarChord {
     destroy(): void;
 }
 export type SVGuitarChord = any;
-export type FingerPosition = [number, number, {
+export type FingerPosition = [number, number | "x", {
     text?: string;
     color?: string;
     className?: string;

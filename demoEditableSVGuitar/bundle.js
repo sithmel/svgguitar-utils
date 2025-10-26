@@ -221,16 +221,15 @@ var EditableSVGuitarChord = class {
     for (let string = 1; string <= 6; string++) {
       const openString = fingers.some(([s2, f2]) => s2 === string && f2 === 0);
       const noPlayString = fingers.some(([s2, f2]) => s2 === string && f2 === "x");
-      if (!openString && !noPlayString) {
+      if (!openString) {
         const placeholder = [string, 0];
         placeholders.push(placeholder);
-        if (this.svgContainer) {
-          this.svgContainer.classList.add(`hide-open-string-${string - 1}`);
-        }
+      }
+      if (!this.svgContainer) continue;
+      if (openString) {
+        this.svgContainer.classList.remove(`hide-open-string-${6 - string}`);
       } else {
-        if (this.svgContainer) {
-          this.svgContainer.classList.remove(`hide-open-string-${string - 1}`);
-        }
+        this.svgContainer.classList.add(`hide-open-string-${6 - string}`);
       }
     }
     return {
@@ -249,7 +248,9 @@ var EditableSVGuitarChord = class {
         /** @type {Element} */
         event.target
       );
-      if (target.tagName === "circle" && target.classList.contains("finger-circle")) {
+      if (target.classList.contains("open-string")) {
+        this.handleOpenStringClick(target);
+      } else if (target.tagName === "circle" && target.classList.contains("finger-circle")) {
         this.handleDotClick(target);
       } else if (target.tagName === "text" && target.previousElementSibling && target.previousElementSibling.tagName === "circle" && target.previousElementSibling.classList.contains("finger-circle")) {
         this.handleDotClick(target.previousElementSibling);
@@ -275,6 +276,32 @@ var EditableSVGuitarChord = class {
     } else {
       this.editDot(string, fret);
     }
+  }
+  /**
+   * Handle click on an open string element
+   * @param {Element} openStringElement
+   */
+  handleOpenStringClick(openStringElement) {
+    if (this.isDialogOpen) return;
+    const classes2 = Array.from(openStringElement.classList);
+    const stringClass = classes2.find((c2) => c2.startsWith("open-string-"));
+    if (!stringClass) return;
+    const stringIndex = parseInt(stringClass.replace("open-string-", ""), 10);
+    const string = 6 - stringIndex;
+    const existingFingerIndex = this.chordConfig.fingers.findIndex(([s2, f2]) => s2 === string && (f2 === 0 || f2 === "x"));
+    if (existingFingerIndex === -1) {
+      this.chordConfig.fingers.push([string, 0]);
+    } else {
+      const existingFinger = this.chordConfig.fingers[existingFingerIndex];
+      const existingFret = existingFinger[1];
+      if (existingFret === 0) {
+        this.chordConfig.fingers[existingFingerIndex] = [string, "x"];
+      } else if (existingFret === "x") {
+        this.chordConfig.fingers.splice(existingFingerIndex, 1);
+      }
+    }
+    this.redraw();
+    this.triggerChange();
   }
   /**
    * Add a new dot at the specified position
@@ -385,6 +412,11 @@ var EditableSVGuitarChord = class {
         border-left-color: white;
         transform: translateY(-50%);
       }
+
+      .editable-svguitar-svg .open-string{
+        fill: transparent !important;
+      }
+
       .editable-svguitar-svg.hide-open-string-0 .open-string-0,
       .editable-svguitar-svg.hide-open-string-1 .open-string-1,
       .editable-svguitar-svg.hide-open-string-2 .open-string-2,
