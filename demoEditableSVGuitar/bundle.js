@@ -169,17 +169,18 @@ var EditableSVGuitarChord = class {
         maxFret = fret;
       }
     }
-    return Math.max(3, maxFret + 1);
+    return Math.max(3, maxFret);
   }
   /**
    * Draw the chord with interactive capabilities
+   * @param {number | undefined} [frets] - Force redraw even if already drawn
    * @returns {EditableSVGuitarChord}
    */
-  draw() {
+  draw(frets) {
     if (typeof document !== "undefined" && !this.controlsCreated) {
       this.createControls();
     }
-    this.config.frets = this.calculateDynamicFrets();
+    this.config.frets = Math.max(frets != null ? frets : 0, this.calculateDynamicFrets());
     const chordWithPlaceholders = this.addPlaceholderDots(this.chordConfig);
     if (this.svgContainer) {
       this.svgChord = new this.SVGuitarChordClass(this.svgContainer);
@@ -190,12 +191,13 @@ var EditableSVGuitarChord = class {
   }
   /**
    * Redraw the chord
+   * @param {number | undefined} [frets] - Force redraw even if already drawn
    */
-  redraw() {
+  redraw(frets) {
     if (this.svgContainer) {
       this.svgContainer.innerHTML = "";
     }
-    this.draw();
+    this.draw(frets);
   }
   /**
    * Add transparent placeholder dots for empty positions
@@ -220,7 +222,6 @@ var EditableSVGuitarChord = class {
     }
     for (let string = 1; string <= 6; string++) {
       const openString = fingers.some(([s2, f2]) => s2 === string && f2 === 0);
-      const noPlayString = fingers.some(([s2, f2]) => s2 === string && f2 === "x");
       if (!openString) {
         const placeholder = [string, 0];
         placeholders.push(placeholder);
@@ -254,6 +255,36 @@ var EditableSVGuitarChord = class {
         this.handleDotClick(target);
       } else if (target.tagName === "text" && target.previousElementSibling && target.previousElementSibling.tagName === "circle" && target.previousElementSibling.classList.contains("finger-circle")) {
         this.handleDotClick(target.previousElementSibling);
+      }
+    });
+    const resizeOnHover = (size2) => {
+      this.redraw(size2);
+    };
+    let hoverResizeTimeout = null;
+    const overHandler = (event) => {
+      const target = (
+        /** @type {Element} */
+        event.target
+      );
+      if (target.tagName === "circle" && target.classList.contains("finger-circle")) {
+        const classes2 = Array.from(target.classList);
+        const fretClass = classes2.find((c2) => c2.startsWith("finger-fret-"));
+        if (fretClass) {
+          const fretNumber = fretClass.replace("finger-fret-", "");
+          clearTimeout(hoverResizeTimeout);
+          hoverResizeTimeout = setTimeout(resizeOnHover, 1e3, parseInt(fretNumber, 10) + 2);
+        }
+      }
+    };
+    svg.addEventListener("mouseover", overHandler);
+    svg.addEventListener("mouseout", (event) => {
+      const target = (
+        /** @type {Element} */
+        event.target
+      );
+      if (target.tagName === "circle" && target.classList.contains("finger-circle")) {
+        clearTimeout(hoverResizeTimeout);
+        hoverResizeTimeout = setTimeout(resizeOnHover, 1e3, void 0);
       }
     });
   }
