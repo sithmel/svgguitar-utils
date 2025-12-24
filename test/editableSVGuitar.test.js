@@ -2,7 +2,7 @@
 
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { EditableSVGuitarChord, COLOR_PRESETS } from '../lib/editableSVGuitar.js';
+import { EditableSVGuitarChord, DOT_COLORS } from '../lib/editableSVGuitar.js';
 
 // Mock SVGuitarChord class for testing
 class MockSVGuitarChord {
@@ -192,21 +192,22 @@ describe('EditableSVGuitarChord (Core Functionality)', () => {
   });
 });
 
-describe('COLOR_PRESETS', () => {
-  test('exports COLOR_PRESETS array', () => {
-    assert.ok(Array.isArray(COLOR_PRESETS), 'COLOR_PRESETS should be an array');
-    assert.ok(COLOR_PRESETS.length > 0, 'COLOR_PRESETS should not be empty');
+describe('DOT_COLORS', () => {
+  test('exports DOT_COLORS object with red and black', () => {
+    assert.ok(typeof DOT_COLORS === 'object', 'DOT_COLORS should be an object');
+    assert.ok(DOT_COLORS.RED, 'DOT_COLORS should have RED property');
+    assert.ok(DOT_COLORS.BLACK, 'DOT_COLORS should have BLACK property');
   });
 
-  test('COLOR_PRESETS contains valid hex colors', () => {
-    COLOR_PRESETS.forEach(color => {
+  test('DOT_COLORS contains valid hex colors', () => {
+    Object.values(DOT_COLORS).forEach(color => {
       assert.ok(typeof color === 'string', 'Color should be a string');
       assert.ok(/^#[0-9a-fA-F]{6}$/.test(color), `Color ${color} should be valid hex format`);
     });
   });
 
-  test('COLOR_PRESETS does not contain white', () => {
-    assert.ok(!COLOR_PRESETS.includes('#ffffff'), 'COLOR_PRESETS should not contain white');
-    assert.ok(!COLOR_PRESETS.includes('#FFFFFF'), 'COLOR_PRESETS should not contain white (uppercase)');
+  test('DOT_COLORS has expected red and black values', () => {
+    assert.equal(DOT_COLORS.RED, '#e74c3c', 'RED should be correct hex value');
+    assert.equal(DOT_COLORS.BLACK, '#000000', 'BLACK should be correct hex value');
   });
 });

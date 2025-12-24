@@ -1,22 +1,8 @@
 // lib/editableSVGuitar.js
-var COLOR_PRESETS = [
-  // Top row
-  "#e74c3c",
-  "#f39c12",
-  "#f1c40f",
-  "#8b4513",
-  "#229954",
-  "#9b59b6",
-  "#3498db",
-  // Bottom row  
-  "#85c1e9",
-  "#48c9b0",
-  "#82e5aa",
-  "#000000",
-  "#555555",
-  "#999999",
-  "#cccccc"
-];
+var DOT_COLORS = {
+  RED: "#e74c3c",
+  BLACK: "#000000"
+};
 var EditableSVGuitarChord = class {
   /**
    * @param {HTMLElement} container
@@ -67,45 +53,55 @@ var EditableSVGuitarChord = class {
     const title = document.createElement("h3");
     title.textContent = "Edit Dot";
     title.style.cssText = "margin: 0 0 15px 0; font-size: 16px;";
+    const colorSection = document.createElement("div");
+    colorSection.style.cssText = "margin-bottom: 15px;";
+    const colorLabel = document.createElement("div");
+    colorLabel.textContent = "Color:";
+    colorLabel.style.cssText = "font-weight: bold; margin-bottom: 8px;";
+    colorSection.appendChild(colorLabel);
+    const colorOptions = document.createElement("div");
+    colorOptions.style.cssText = "display: flex; gap: 15px;";
+    const redOption = document.createElement("label");
+    redOption.style.cssText = "display: flex; align-items: center; cursor: pointer;";
+    this.redRadio = document.createElement("input");
+    this.redRadio.type = "radio";
+    this.redRadio.name = "dotColor";
+    this.redRadio.value = DOT_COLORS.RED;
+    this.redRadio.addEventListener("change", () => this.updateDotColor());
+    const redLabel = document.createElement("span");
+    redLabel.textContent = "Red";
+    redLabel.style.cssText = "margin-left: 5px; color: #e74c3c; font-weight: bold;";
+    redOption.appendChild(this.redRadio);
+    redOption.appendChild(redLabel);
+    const blackOption = document.createElement("label");
+    blackOption.style.cssText = "display: flex; align-items: center; cursor: pointer;";
+    this.blackRadio = document.createElement("input");
+    this.blackRadio.type = "radio";
+    this.blackRadio.name = "dotColor";
+    this.blackRadio.value = DOT_COLORS.BLACK;
+    this.blackRadio.checked = true;
+    this.blackRadio.addEventListener("change", () => this.updateDotColor());
+    const blackLabel = document.createElement("span");
+    blackLabel.textContent = "Black";
+    blackLabel.style.cssText = "margin-left: 5px; color: #000000; font-weight: bold;";
+    blackOption.appendChild(this.blackRadio);
+    blackOption.appendChild(blackLabel);
+    colorOptions.appendChild(redOption);
+    colorOptions.appendChild(blackOption);
+    colorSection.appendChild(colorOptions);
+    this.textSection = document.createElement("div");
+    this.textSection.style.cssText = "margin-bottom: 15px;";
     const textLabel = document.createElement("label");
-    textLabel.textContent = "Text: ";
-    textLabel.style.cssText = "display: block; margin-bottom: 10px;";
+    textLabel.textContent = "Text (optional): ";
+    textLabel.style.cssText = "display: block; margin-bottom: 5px; font-weight: bold;";
     this.textInput = document.createElement("input");
     this.textInput.type = "text";
-    this.textInput.maxLength = 3;
-    this.textInput.style.cssText = "width: 38px; margin-left: 5px;";
+    this.textInput.maxLength = 2;
+    this.textInput.placeholder = "1-2 chars";
+    this.textInput.style.cssText = "width: 60px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;";
     this.textInput.addEventListener("input", () => this.updateDotText());
     textLabel.appendChild(this.textInput);
-    const colorLabel = document.createElement("label");
-    colorLabel.textContent = "Color: ";
-    colorLabel.style.cssText = "display: block; margin-bottom: 10px;";
-    this.colorInput = document.createElement("input");
-    this.colorInput.type = "color";
-    this.colorInput.value = "#000000";
-    this.colorInput.style.cssText = "margin-left: 5px; margin-bottom: 8px;";
-    this.colorInput.addEventListener("input", () => this.updateDotColor());
-    colorLabel.appendChild(this.colorInput);
-    const colorsGrid = document.createElement("div");
-    colorsGrid.style.cssText = "display: grid; grid-template-columns: repeat(7, 20px); gap: 3px; margin-left: 5px;";
-    COLOR_PRESETS.forEach((color) => {
-      const swatch = document.createElement("button");
-      swatch.type = "button";
-      swatch.style.cssText = `
-        width: 20px;
-        height: 20px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        background-color: ${color};
-        cursor: pointer;
-        padding: 0;
-      `;
-      swatch.addEventListener("click", () => {
-        this.colorInput.value = color;
-        this.updateDotColor();
-      });
-      colorsGrid.appendChild(swatch);
-    });
-    colorLabel.appendChild(colorsGrid);
+    this.textSection.appendChild(textLabel);
     const buttonDiv = document.createElement("div");
     buttonDiv.style.cssText = "display: flex; gap: 10px; justify-content: flex-end;";
     const removeBtn = document.createElement("button");
@@ -119,8 +115,8 @@ var EditableSVGuitarChord = class {
     buttonDiv.appendChild(removeBtn);
     buttonDiv.appendChild(doneBtn);
     this.dialog.appendChild(title);
-    this.dialog.appendChild(textLabel);
-    this.dialog.appendChild(colorLabel);
+    this.dialog.appendChild(colorSection);
+    this.dialog.appendChild(this.textSection);
     this.dialog.appendChild(buttonDiv);
     document.body.appendChild(this.dialog);
     this.backdrop = document.createElement("div");
@@ -340,7 +336,7 @@ var EditableSVGuitarChord = class {
    * @param {number} fret
    */
   addDot(string, fret) {
-    this.chordConfig.fingers.push([string, fret, { text: "", color: "#000000" }]);
+    this.chordConfig.fingers.push([string, fret, { text: "", color: DOT_COLORS.BLACK }]);
     this.redraw();
     this.triggerChange();
   }
@@ -356,8 +352,13 @@ var EditableSVGuitarChord = class {
     this.currentEditFinger = finger;
     this.currentEditString = string;
     this.currentEditFret = fret;
-    this.textInput.value = ((_a6 = finger[2]) == null ? void 0 : _a6.text) || "";
-    this.colorInput.value = ((_b = finger[2]) == null ? void 0 : _b.color) || "#000000";
+    const currentColor = ((_a6 = finger[2]) == null ? void 0 : _a6.color) || DOT_COLORS.BLACK;
+    const currentText = ((_b = finger[2]) == null ? void 0 : _b.text) || "";
+    const normalizedColor = currentColor === DOT_COLORS.RED ? DOT_COLORS.RED : DOT_COLORS.BLACK;
+    this.redRadio.checked = normalizedColor === DOT_COLORS.RED;
+    this.blackRadio.checked = normalizedColor === DOT_COLORS.BLACK;
+    this.textInput.value = currentText;
+    this.updateTextSectionVisibility();
     this.openDialog();
   }
   /**
@@ -370,7 +371,10 @@ var EditableSVGuitarChord = class {
     if (this.currentEditElement) {
       this.positionDialog();
     }
-    this.textInput.focus();
+    this.updateTextSectionVisibility();
+    if (this.blackRadio.checked && !this.textInput.disabled) {
+      this.textInput.focus();
+    }
   }
   /**
    * Position dialog relative to the clicked element
@@ -473,6 +477,17 @@ var EditableSVGuitarChord = class {
     this.currentEditElement = null;
   }
   /**
+   * Update text section visibility based on color selection
+   */
+  updateTextSectionVisibility() {
+    if (!this.textSection) return;
+    const isBlack = this.blackRadio && this.blackRadio.checked;
+    this.textSection.style.display = isBlack ? "block" : "none";
+    if (this.textInput) {
+      this.textInput.disabled = !isBlack;
+    }
+  }
+  /**
    * Update dot text in real-time
    */
   updateDotText() {
@@ -492,7 +507,13 @@ var EditableSVGuitarChord = class {
     if (!this.currentEditFinger[2]) {
       this.currentEditFinger[2] = {};
     }
-    this.currentEditFinger[2].color = this.colorInput.value;
+    const selectedColor = this.redRadio.checked ? DOT_COLORS.RED : DOT_COLORS.BLACK;
+    this.currentEditFinger[2].color = selectedColor;
+    if (selectedColor === DOT_COLORS.RED) {
+      this.currentEditFinger[2].text = "";
+      this.textInput.value = "";
+    }
+    this.updateTextSectionVisibility();
     this.redraw();
     this.triggerChange();
   }
@@ -505,7 +526,8 @@ var EditableSVGuitarChord = class {
       this.currentEditFinger[2] = {};
     }
     this.currentEditFinger[2].text = this.textInput.value;
-    this.currentEditFinger[2].color = this.colorInput.value;
+    const selectedColor = this.redRadio.checked ? DOT_COLORS.RED : DOT_COLORS.BLACK;
+    this.currentEditFinger[2].color = selectedColor;
     this.closeDialog();
     this.redraw();
   }

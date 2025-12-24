@@ -1,13 +1,7 @@
-/**
- * @typedef {any} SVGuitarChord
- * @typedef {[number, number | 'x', {text?: string, color?: string, className?: string}?]} FingerPosition
- * @typedef {{fingers: FingerPosition[], barres: any[], frets?: number}} ChordConfig
- * @typedef {{text?: string, color?: string, className?: string}} FingerOptions
- */
-/**
- * Default color presets for the chord editor
- */
-export const COLOR_PRESETS: string[];
+export namespace DOT_COLORS {
+    let RED: string;
+    let BLACK: string;
+}
 /**
  * EditableSVGuitarChord - Wrapper around SVGuitarChord that adds interactive editing capabilities
  *
@@ -46,8 +40,10 @@ export class EditableSVGuitarChord {
      */
     createDialog(): void;
     dialog: HTMLDivElement;
+    redRadio: HTMLInputElement;
+    blackRadio: HTMLInputElement;
+    textSection: HTMLDivElement;
     textInput: HTMLInputElement;
-    colorInput: HTMLInputElement;
     backdrop: HTMLDivElement;
     /**
      * Set chord configuration
@@ -68,13 +64,15 @@ export class EditableSVGuitarChord {
     calculateDynamicFrets(): number;
     /**
      * Draw the chord with interactive capabilities
+     * @param {number | undefined} [frets] - Force redraw even if already drawn
      * @returns {EditableSVGuitarChord}
      */
-    draw(): EditableSVGuitarChord;
+    draw(frets?: number | undefined): EditableSVGuitarChord;
     /**
      * Redraw the chord
+     * @param {number | undefined} [frets] - Force redraw even if already drawn
      */
-    redraw(): void;
+    redraw(frets?: number | undefined): void;
     /**
      * Add transparent placeholder dots for empty positions
      * @param {ChordConfig} config
@@ -134,6 +132,10 @@ export class EditableSVGuitarChord {
      * Close the edit dialog
      */
     closeDialog(): void;
+    /**
+     * Update text section visibility based on color selection
+     */
+    updateTextSectionVisibility(): void;
     /**
      * Update dot text in real-time
      */

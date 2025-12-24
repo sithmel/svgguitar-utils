@@ -20,7 +20,7 @@ A JavaScript library that adds a few utilities to [svguitar](https://github.com/
   ||||||
 
   D
-  xo   o
+  xoo  
   ||||||
   |||o|o
   ||||*|

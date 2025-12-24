@@ -33,12 +33,11 @@
     "url": "https://github.com/username/svgguitar-utils/issues"
   },
   "homepage": "https://github.com/username/svgguitar-utils#readme",
-  "peerDependencies": {
+  "dependencies": {
     "svguitar": "^2.4.1"
   },
   "devDependencies": {
     "esbuild": "^0.25.10",
-    "svguitar": "^2.4.1",
     "typescript": "^5.9.2"
   }
 }
