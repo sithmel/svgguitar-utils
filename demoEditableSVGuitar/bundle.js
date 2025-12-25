@@ -1,768 +1,180 @@
-// lib/editableSVGuitar.js
-var DOT_COLORS = {
-  RED: "#e74c3c",
-  BLACK: "#000000"
-};
-var EditableSVGuitarChord = class {
-  /**
-   * @param {HTMLElement} container
-   * @param {any} SVGuitarChordClass
-   */
-  constructor(container, SVGuitarChordClass) {
-    this.container = container;
-    this.SVGuitarChordClass = SVGuitarChordClass;
-    this.chordConfig = { fingers: [], barres: [], title: void 0, position: void 0 };
-    this.config = { frets: 5, noPosition: true };
-    this.svgChord = null;
-    this.isDialogOpen = false;
-    this.controlsCreated = false;
-    this.currentEditElement = null;
-    this.changeCallback = null;
-    if (typeof document !== "undefined") {
-      this.createControls();
-    }
-    this.addCustomCSS();
+// lib/fingeringToString.js
+function fingeringToString(chord, options = {}) {
+  const { useUnicode = false } = options;
+  const { fingers = [], title = "", position: position2 } = chord;
+  if (fingers.length === 0 && !title) {
+    return "";
   }
-  /**
-   * Create controls and containers
-   */
-  createControls() {
-    this.controlsCreated = true;
-    this.wrapper = document.createElement("div");
-    this.wrapper.className = "editable-svguitar-wrapper";
-    this.wrapper.style.cssText = "position: relative;";
-    this.container.appendChild(this.wrapper);
-    this.settingsButton = document.createElement("button");
-    this.settingsButton.className = "editable-svguitar-settings-btn";
-    this.settingsButton.innerHTML = "\u2699\uFE0F";
-    this.settingsButton.title = "Edit title and position";
-    this.settingsButton.style.cssText = `
-      position: absolute;
-      top: 5px;
-      left: 5px;
-      background: white;
-      border: 1px solid #333;
-      border-radius: 4px;
-      padding: 4px 8px;
-      cursor: pointer;
-      font-size: 14px;
-      z-index: 10;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    `;
-    this.settingsButton.addEventListener("click", () => this.openSettingsDialog());
-    this.wrapper.appendChild(this.settingsButton);
-    this.svgContainer = document.createElement("div");
-    this.svgContainer.className = "editable-svguitar-svg";
-    this.wrapper.appendChild(this.svgContainer);
-    this.createDialog();
-    this.createSettingsDialog();
-  }
-  /**
-   * Create the settings dialog for title and position
-   */
-  createSettingsDialog() {
-    this.settingsDialog = document.createElement("div");
-    this.settingsDialog.className = "editable-svguitar-settings-dialog";
-    this.settingsDialog.style.cssText = `
-      display: none;
-      position: absolute;
-      background: white;
-      border: 2px solid #333;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      z-index: 1000;
-      min-width: 280px;
-    `;
-    const title = document.createElement("h3");
-    title.textContent = "Chord Settings";
-    title.style.cssText = "margin: 0 0 15px 0; font-size: 16px;";
-    const titleSection = document.createElement("div");
-    titleSection.style.cssText = "margin-bottom: 15px;";
-    const titleLabel = document.createElement("label");
-    titleLabel.textContent = "Title (optional): ";
-    titleLabel.style.cssText = "display: block; margin-bottom: 5px; font-weight: bold;";
-    this.titleInput = document.createElement("input");
-    this.titleInput.type = "text";
-    this.titleInput.placeholder = "e.g., A min, G7";
-    this.titleInput.style.cssText = "width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;";
-    titleLabel.appendChild(this.titleInput);
-    titleSection.appendChild(titleLabel);
-    const positionSection = document.createElement("div");
-    positionSection.style.cssText = "margin-bottom: 15px;";
-    const positionLabel = document.createElement("label");
-    positionLabel.textContent = "Position (optional): ";
-    positionLabel.style.cssText = "display: block; margin-bottom: 5px; font-weight: bold;";
-    this.positionInput = document.createElement("input");
-    this.positionInput.type = "number";
-    this.positionInput.min = "0";
-    this.positionInput.max = "30";
-    this.positionInput.placeholder = "0-30";
-    this.positionInput.style.cssText = "width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;";
-    positionLabel.appendChild(this.positionInput);
-    positionSection.appendChild(positionLabel);
-    const buttonDiv = document.createElement("div");
-    buttonDiv.style.cssText = "display: flex; gap: 10px; justify-content: flex-end;";
-    const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "Cancel";
-    cancelBtn.style.cssText = "padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;";
-    cancelBtn.addEventListener("click", () => this.closeSettingsDialog());
-    const saveBtn = document.createElement("button");
-    saveBtn.textContent = "Save";
-    saveBtn.style.cssText = "padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;";
-    saveBtn.addEventListener("click", () => this.saveSettings());
-    buttonDiv.appendChild(cancelBtn);
-    buttonDiv.appendChild(saveBtn);
-    this.settingsDialog.appendChild(title);
-    this.settingsDialog.appendChild(titleSection);
-    this.settingsDialog.appendChild(positionSection);
-    this.settingsDialog.appendChild(buttonDiv);
-    document.body.appendChild(this.settingsDialog);
-    this.settingsBackdrop = document.createElement("div");
-    this.settingsBackdrop.className = "editable-svguitar-settings-backdrop";
-    this.settingsBackdrop.style.cssText = `
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 999;
-    `;
-    this.settingsBackdrop.addEventListener("click", () => this.closeSettingsDialog());
-    document.body.appendChild(this.settingsBackdrop);
-  }
-  /**
-   * Create the edit dialog
-   */
-  createDialog() {
-    this.dialog = document.createElement("div");
-    this.dialog.className = "editable-svguitar-dialog";
-    this.dialog.style.cssText = `
-      display: none;
-      position: absolute;
-      background: white;
-      border: 2px solid #333;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      z-index: 1000;
-      min-width: 250px;
-    `;
-    const title = document.createElement("h3");
-    title.textContent = "Edit Dot";
-    title.style.cssText = "margin: 0 0 15px 0; font-size: 16px;";
-    const colorSection = document.createElement("div");
-    colorSection.style.cssText = "margin-bottom: 15px;";
-    const colorLabel = document.createElement("div");
-    colorLabel.textContent = "Color:";
-    colorLabel.style.cssText = "font-weight: bold; margin-bottom: 8px;";
-    colorSection.appendChild(colorLabel);
-    const colorOptions = document.createElement("div");
-    colorOptions.style.cssText = "display: flex; gap: 15px;";
-    const redOption = document.createElement("label");
-    redOption.style.cssText = "display: flex; align-items: center; cursor: pointer;";
-    this.redRadio = document.createElement("input");
-    this.redRadio.type = "radio";
-    this.redRadio.name = "dotColor";
-    this.redRadio.value = DOT_COLORS.RED;
-    this.redRadio.addEventListener("change", () => this.updateDotColor());
-    const redLabel = document.createElement("span");
-    redLabel.textContent = "Red";
-    redLabel.style.cssText = "margin-left: 5px; color: #e74c3c; font-weight: bold;";
-    redOption.appendChild(this.redRadio);
-    redOption.appendChild(redLabel);
-    const blackOption = document.createElement("label");
-    blackOption.style.cssText = "display: flex; align-items: center; cursor: pointer;";
-    this.blackRadio = document.createElement("input");
-    this.blackRadio.type = "radio";
-    this.blackRadio.name = "dotColor";
-    this.blackRadio.value = DOT_COLORS.BLACK;
-    this.blackRadio.checked = true;
-    this.blackRadio.addEventListener("change", () => this.updateDotColor());
-    const blackLabel = document.createElement("span");
-    blackLabel.textContent = "Black";
-    blackLabel.style.cssText = "margin-left: 5px; color: #000000; font-weight: bold;";
-    blackOption.appendChild(this.blackRadio);
-    blackOption.appendChild(blackLabel);
-    colorOptions.appendChild(redOption);
-    colorOptions.appendChild(blackOption);
-    colorSection.appendChild(colorOptions);
-    this.textSection = document.createElement("div");
-    this.textSection.style.cssText = "margin-bottom: 15px;";
-    const textLabel = document.createElement("label");
-    textLabel.textContent = "Text (optional): ";
-    textLabel.style.cssText = "display: block; margin-bottom: 5px; font-weight: bold;";
-    this.textInput = document.createElement("input");
-    this.textInput.type = "text";
-    this.textInput.maxLength = 2;
-    this.textInput.placeholder = "1-2 chars";
-    this.textInput.style.cssText = "width: 60px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;";
-    this.textInput.addEventListener("input", () => this.updateDotText());
-    textLabel.appendChild(this.textInput);
-    this.textSection.appendChild(textLabel);
-    const buttonDiv = document.createElement("div");
-    buttonDiv.style.cssText = "display: flex; gap: 10px; justify-content: flex-end;";
-    const removeBtn = document.createElement("button");
-    removeBtn.textContent = "Remove";
-    removeBtn.style.cssText = "padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;";
-    removeBtn.addEventListener("click", () => this.removeDot());
-    const doneBtn = document.createElement("button");
-    doneBtn.textContent = "Done";
-    doneBtn.style.cssText = "padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;";
-    doneBtn.addEventListener("click", () => this.closeDialog());
-    buttonDiv.appendChild(removeBtn);
-    buttonDiv.appendChild(doneBtn);
-    this.dialog.appendChild(title);
-    this.dialog.appendChild(colorSection);
-    this.dialog.appendChild(this.textSection);
-    this.dialog.appendChild(buttonDiv);
-    document.body.appendChild(this.dialog);
-    this.backdrop = document.createElement("div");
-    this.backdrop.className = "editable-svguitar-backdrop";
-    this.backdrop.style.cssText = `
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 999;
-    `;
-    this.backdrop.addEventListener("click", () => this.closeDialog());
-    document.body.appendChild(this.backdrop);
-  }
-  /**
-   * Set chord configuration
-   * @param {import("svguitar").Chord} config
-   * @returns {EditableSVGuitarChord}
-   */
-  chord(config) {
-    this.chordConfig = {
-      fingers: config.fingers || [],
-      barres: config.barres || [],
-      title: config.title || "",
-      position: config.position
-    };
-    this.config.noPosition = config.position === void 0;
-    return this;
-  }
-  /**
-   * Configure SVGuitar options
-   * @param {any} config
-   * @returns {EditableSVGuitarChord}
-   */
-  configure(config) {
-    this.config = { ...this.config, ...config };
-    return this;
-  }
-  /**
-   * Calculate dynamic fret count based on chord content
-   * @returns {number} - Number of frets needed (minimum 3, max dot position + 1)
-   */
-  calculateDynamicFrets() {
-    const { fingers } = this.chordConfig;
-    let maxFret = 0;
-    for (const [, fret] of fingers) {
-      if (typeof fret === "string") continue;
-      if (fret > maxFret) {
-        maxFret = fret;
-      }
-    }
-    return Math.max(3, maxFret);
-  }
-  /**
-   * Draw the chord with interactive capabilities
-   * @param {number | undefined} [frets] - Force redraw even if already drawn
-   * @returns {EditableSVGuitarChord}
-   */
-  draw(frets) {
-    if (typeof document !== "undefined" && !this.controlsCreated) {
-      this.createControls();
-    }
-    this.config.frets = Math.max(frets != null ? frets : 0, this.calculateDynamicFrets());
-    const chordWithPlaceholders = this.addPlaceholderDots(this.chordConfig);
-    if (this.svgContainer) {
-      this.svgChord = new this.SVGuitarChordClass(this.svgContainer);
-      this.svgChord.chord(chordWithPlaceholders).configure(this.config).draw();
-      this.addEventListeners();
-    }
-    return this;
-  }
-  /**
-   * Redraw the chord
-   * @param {number | undefined} [frets] - Force redraw even if already drawn
-   */
-  redraw(frets) {
-    if (this.svgContainer) {
-      this.svgContainer.innerHTML = "";
-    }
-    this.draw(frets);
-  }
-  /**
-   * Add transparent placeholder dots for empty positions
-   * @param {import("svguitar").Chord} config
-   * @returns {import("svguitar").Chord}
-   */
-  addPlaceholderDots(config) {
-    const { fingers, title, position: position2 } = config;
-    const placeholders = [];
-    for (let string = 1; string <= 6; string++) {
-      for (let fret = 1; fret <= this.config.frets; fret++) {
-        const exists = fingers.some(([s2, f2]) => s2 === string && f2 === fret);
-        if (!exists) {
-          const placeholder = [string, fret, {
-            color: "transparent",
-            className: "placeholder-dot",
-            text: ""
-          }];
-          placeholders.push(placeholder);
-        }
-      }
-    }
-    for (let string = 1; string <= 6; string++) {
-      const openString = fingers.some(([s2, f2]) => s2 === string && f2 === 0);
-      if (!openString) {
-        const placeholder = [string, 0];
-        placeholders.push(placeholder);
-      }
-      if (!this.svgContainer) continue;
-      if (openString) {
-        this.svgContainer.classList.remove(`hide-open-string-${6 - string}`);
-      } else {
-        this.svgContainer.classList.add(`hide-open-string-${6 - string}`);
-      }
-    }
-    const result = {
-      fingers: [...fingers, ...placeholders],
-      barres: config.barres
-    };
-    if (title && title.trim()) {
-      result.title = title;
-    }
-    if (position2 !== void 0) {
-      result.position = position2;
-    }
-    return result;
-  }
-  /**
-   * Add event listeners to SVG elements
-   */
-  addEventListeners() {
-    const svg = this.svgContainer.querySelector("svg");
-    if (!svg) return;
-    svg.addEventListener("click", (event) => {
-      const target = (
-        /** @type {Element} */
-        event.target
-      );
-      if (target.classList.contains("open-string")) {
-        this.handleOpenStringClick(target);
-      } else if (target.tagName === "circle" && target.classList.contains("finger-circle")) {
-        this.handleDotClick(target);
-      } else if (target.tagName === "text" && target.previousElementSibling && target.previousElementSibling.tagName === "circle" && target.previousElementSibling.classList.contains("finger-circle")) {
-        this.handleDotClick(target.previousElementSibling);
-      }
-    });
-    const resizeOnHover = (size2) => {
-      this.redraw(size2);
-    };
-    let hoverResizeTimeout = null;
-    const overHandler = (event) => {
-      const target = (
-        /** @type {Element} */
-        event.target
-      );
-      if (target.tagName === "circle" && target.classList.contains("finger-circle")) {
-        const classes2 = Array.from(target.classList);
-        const fretClass = classes2.find((c2) => c2.startsWith("finger-fret-"));
-        if (fretClass) {
-          const fretNumber = fretClass.replace("finger-fret-", "");
-          clearTimeout(hoverResizeTimeout);
-          hoverResizeTimeout = setTimeout(resizeOnHover, 1e3, parseInt(fretNumber, 10) + 2);
-        }
-      }
-    };
-    svg.addEventListener("mouseover", overHandler);
-    svg.addEventListener("mouseout", (event) => {
-      const target = (
-        /** @type {Element} */
-        event.target
-      );
-      if (target.tagName === "circle" && target.classList.contains("finger-circle")) {
-        clearTimeout(hoverResizeTimeout);
-        hoverResizeTimeout = setTimeout(resizeOnHover, 1e3, void 0);
-      }
-    });
-  }
-  /**
-   * Handle click on a dot (finger circle)
-   * @param {Element} circleElement
-   */
-  handleDotClick(circleElement) {
-    if (this.isDialogOpen) return;
-    this.currentEditElement = circleElement;
-    const classes2 = Array.from(circleElement.classList);
-    const stringClass = classes2.find((c2) => c2.startsWith("finger-string-"));
-    const fretClass = classes2.find((c2) => c2.startsWith("finger-fret-"));
-    if (!stringClass || !fretClass) return;
-    const string = 6 - parseInt(stringClass.replace("finger-string-", ""), 10);
-    const fret = 1 + parseInt(fretClass.replace("finger-fret-", ""), 10);
-    const isPlaceholder = circleElement.getAttribute("fill") === "transparent";
-    if (isPlaceholder) {
-      this.addDot(string, fret);
+  if (fingers.length === 0 && title) {
+    const titleLine = title ? `  ${title}` : ` `;
+    if (useUnicode) {
+      return `${titleLine}
+  \u2552\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2555
+  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
+  \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524
+  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
+  \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524
+  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
+  \u2514\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2518`;
     } else {
-      this.editDot(string, fret);
+      return `${titleLine}
+  ||||||
+  ||||||
+  ||||||`;
     }
   }
-  /**
-   * Handle click on an open string element
-   * @param {Element} openStringElement
-   */
-  handleOpenStringClick(openStringElement) {
-    if (this.isDialogOpen) return;
-    const classes2 = Array.from(openStringElement.classList);
-    const stringClass = classes2.find((c2) => c2.startsWith("open-string-"));
-    if (!stringClass) return;
-    const stringIndex = parseInt(stringClass.replace("open-string-", ""), 10);
-    const string = 6 - stringIndex;
-    const existingFingerIndex = this.chordConfig.fingers.findIndex(([s2, f2]) => s2 === string && (f2 === 0 || f2 === "x"));
-    if (existingFingerIndex === -1) {
-      this.chordConfig.fingers.push([string, 0]);
+  const stringData = /* @__PURE__ */ new Map();
+  let maxFret = 0;
+  const openStrings = /* @__PURE__ */ new Set();
+  const mutedStrings = /* @__PURE__ */ new Set();
+  for (const finger of fingers) {
+    const [string, fret, opts = {}] = finger;
+    const optsObject = typeof opts === "object" ? opts : {};
+    const { text = "", color = "#000000" } = optsObject;
+    if (fret === 0) {
+      openStrings.add(string);
+    } else if (fret === "x") {
+      mutedStrings.add(string);
     } else {
-      const existingFinger = this.chordConfig.fingers[existingFingerIndex];
-      const existingFret = existingFinger[1];
-      if (existingFret === 0) {
-        this.chordConfig.fingers[existingFingerIndex] = [string, "x"];
-      } else if (existingFret === "x") {
-        this.chordConfig.fingers.splice(existingFingerIndex, 1);
+      if (!stringData.has(string)) {
+        stringData.set(string, /* @__PURE__ */ new Map());
       }
-    }
-    this.redraw();
-    this.triggerChange();
-  }
-  /**
-   * Add a new dot at the specified position
-   * @param {number} string
-   * @param {number} fret
-   */
-  addDot(string, fret) {
-    this.chordConfig.fingers.push([string, fret, { text: "", color: DOT_COLORS.BLACK }]);
-    this.redraw();
-    this.triggerChange();
-  }
-  /**
-   * Edit an existing dot
-   * @param {number} string
-   * @param {number} fret
-   */
-  editDot(string, fret) {
-    var _a6, _b;
-    const finger = this.chordConfig.fingers.find(([s2, f2]) => s2 === string && f2 === fret);
-    if (!finger) return;
-    this.currentEditFinger = finger;
-    this.currentEditString = string;
-    this.currentEditFret = fret;
-    const currentColor = typeof finger[2] === "object" && ((_a6 = finger[2]) == null ? void 0 : _a6.color) || DOT_COLORS.BLACK;
-    const currentText = typeof finger[2] === "object" && ((_b = finger[2]) == null ? void 0 : _b.text) || "";
-    const normalizedColor = currentColor === DOT_COLORS.RED ? DOT_COLORS.RED : DOT_COLORS.BLACK;
-    this.redRadio.checked = normalizedColor === DOT_COLORS.RED;
-    this.blackRadio.checked = normalizedColor === DOT_COLORS.BLACK;
-    this.textInput.value = currentText;
-    this.updateTextSectionVisibility();
-    this.openDialog();
-  }
-  /**
-   * Open the edit dialog
-   */
-  openDialog() {
-    this.isDialogOpen = true;
-    this.dialog.style.display = "block";
-    this.backdrop.style.display = "block";
-    if (this.currentEditElement) {
-      this.positionDialog();
-    }
-    this.updateTextSectionVisibility();
-    if (this.blackRadio.checked && !this.textInput.disabled) {
-      this.textInput.focus();
+      stringData.get(string).set(fret, { text, color });
+      if (fret > maxFret) maxFret = fret;
     }
   }
-  /**
-   * Position dialog relative to the clicked element
-   */
-  positionDialog() {
-    if (!this.currentEditElement || !this.dialog) return;
-    const elementRect = this.currentEditElement.getBoundingClientRect();
-    const dialogRect = this.dialog.getBoundingClientRect();
-    const elementCenterX = elementRect.left + elementRect.width / 2;
-    const elementCenterY = elementRect.top + elementRect.height / 2;
-    let dialogX = elementCenterX + 20;
-    let dialogY = elementCenterY - dialogRect.height / 2;
-    const padding = 10;
-    const maxX = window.innerWidth - dialogRect.width - padding;
-    const maxY = window.innerHeight - dialogRect.height - padding;
-    let arrowSide = "left";
-    if (dialogX > maxX) {
-      dialogX = elementCenterX - dialogRect.width - 20;
-      arrowSide = "right";
-    }
-    if (dialogX < padding) dialogX = padding;
-    if (dialogY < padding) dialogY = padding;
-    if (dialogY > maxY) dialogY = maxY;
-    this.dialog.style.left = `${dialogX}px`;
-    this.dialog.style.top = `${dialogY}px`;
-    this.addArrowCSS(arrowSide, elementCenterY, dialogY, dialogRect.height);
-  }
-  /**
-   * Add CSS arrow using ::after pseudo-element
-   * @param {string} side - 'left' or 'right' indicating arrow direction
-   * @param {number} dotY - Y position of the clicked dot
-   * @param {number} dialogY - Y position of the dialog
-   * @param {number} dialogHeight - Height of the dialog
-   */
-  addArrowCSS(side, dotY, dialogY, dialogHeight) {
-    this.dialog.classList.remove("arrow-left", "arrow-right");
-    const arrowY = Math.max(20, Math.min(dialogHeight - 20, dotY - dialogY));
-    this.dialog.classList.add(`arrow-${side}`);
-    this.dialog.style.setProperty("--arrow-y", `${arrowY}px`);
-  }
-  /**
-   * Ensure arrow CSS rules are added to the document
-   */
-  addCustomCSS() {
-    if (typeof document === "undefined") return;
-    if (document.getElementById("editable-svguitar-arrow-styles")) return;
-    const style = document.createElement("style");
-    style.id = "editable-svguitar-custom-CSS";
-    style.textContent = `
-      .editable-svguitar-dialog.arrow-left::after {
-        content: '';
-        position: absolute;
-        left: -16px;
-        top: var(--arrow-y, 50px);
-        width: 0;
-        height: 0;
-        border: 8px solid transparent;
-        border-right-color: white;
-        transform: translateY(-50%);
-      }
-      
-      .editable-svguitar-dialog.arrow-right::after {
-        content: '';
-        position: absolute;
-        right: -16px;
-        top: var(--arrow-y, 50px);
-        width: 0;
-        height: 0;
-        border: 8px solid transparent;
-        border-left-color: white;
-        transform: translateY(-50%);
-      }
-
-      .editable-svguitar-svg .open-string{
-        fill: transparent !important;
-      }
-
-      .editable-svguitar-svg.hide-open-string-0 .open-string-0,
-      .editable-svguitar-svg.hide-open-string-1 .open-string-1,
-      .editable-svguitar-svg.hide-open-string-2 .open-string-2,
-      .editable-svguitar-svg.hide-open-string-3 .open-string-3,
-      .editable-svguitar-svg.hide-open-string-4 .open-string-4,
-      .editable-svguitar-svg.hide-open-string-5 .open-string-5 {
-        stroke: transparent !important;
-        fill: transparent !important;
-      }
-      
-      .editable-svguitar-settings-btn:hover {
-        background: #f0f0f0;
-      }
-      `;
-    document.head.appendChild(style);
-  }
-  /**
-   * Close the edit dialog
-   */
-  closeDialog() {
-    this.isDialogOpen = false;
-    this.dialog.style.display = "none";
-    this.backdrop.style.display = "none";
-    this.dialog.classList.remove("arrow-left", "arrow-right");
-    this.dialog.style.removeProperty("--arrow-y");
-    this.currentEditFinger = null;
-    this.currentEditElement = null;
-  }
-  /**
-   * Update text section visibility based on color selection
-   */
-  updateTextSectionVisibility() {
-    if (!this.textSection) return;
-    const isBlack = this.blackRadio && this.blackRadio.checked;
-    this.textSection.style.display = isBlack ? "block" : "none";
-    if (this.textInput) {
-      this.textInput.disabled = !isBlack;
-    }
-  }
-  /**
-   * Update dot text in real-time
-   */
-  updateDotText() {
-    if (!this.currentEditFinger) return;
-    if (!this.currentEditFinger[2]) {
-      this.currentEditFinger[2] = {};
-    }
-    const fingerOptions = typeof this.currentEditFinger[2] === "object" ? this.currentEditFinger[2] : {};
-    this.currentEditFinger[2] = { ...fingerOptions, text: this.textInput.value };
-    this.redraw();
-    this.triggerChange();
-  }
-  /**
-   * Update dot color in real-time
-   */
-  updateDotColor() {
-    if (!this.currentEditFinger) return;
-    if (!this.currentEditFinger[2]) {
-      this.currentEditFinger[2] = {};
-    }
-    const selectedColor = this.redRadio.checked ? DOT_COLORS.RED : DOT_COLORS.BLACK;
-    const fingerOptions = typeof this.currentEditFinger[2] === "object" ? this.currentEditFinger[2] : {};
-    this.currentEditFinger[2] = { ...fingerOptions, color: selectedColor };
-    if (selectedColor === DOT_COLORS.RED) {
-      this.currentEditFinger[2].text = "";
-      this.textInput.value = "";
-    }
-    this.updateTextSectionVisibility();
-    this.redraw();
-    this.triggerChange();
-  }
-  /**
-   * Save changes to the current dot
-   */
-  saveDot() {
-    if (!this.currentEditFinger) return;
-    if (!this.currentEditFinger[2]) {
-      this.currentEditFinger[2] = {};
-    }
-    const selectedColor = this.redRadio.checked ? DOT_COLORS.RED : DOT_COLORS.BLACK;
-    this.currentEditFinger[2] = { text: this.textInput.value, color: selectedColor };
-    this.closeDialog();
-    this.redraw();
-  }
-  /**
-   * Remove the current dot
-   */
-  removeDot() {
-    if (!this.currentEditFinger) return;
-    const index = this.chordConfig.fingers.findIndex(
-      ([s2, f2]) => s2 === this.currentEditString && f2 === this.currentEditFret
+  const numFrets = fingers.some((f2) => typeof f2[1] === "number" && f2[1] > 0) ? Math.max(3, maxFret) : 3;
+  if (useUnicode) {
+    return buildUnicodeOutput(
+      title,
+      stringData,
+      openStrings,
+      mutedStrings,
+      numFrets,
+      position2
     );
-    if (index >= 0) {
-      this.chordConfig.fingers.splice(index, 1);
-    }
-    this.closeDialog();
-    this.redraw();
-    this.triggerChange();
+  } else {
+    return buildAsciiOutput(
+      title,
+      stringData,
+      openStrings,
+      mutedStrings,
+      numFrets,
+      position2
+    );
   }
-  /**
-   * Open the settings dialog
-   */
-  openSettingsDialog() {
-    this.titleInput.value = this.chordConfig.title || "";
-    this.positionInput.value = this.chordConfig.position !== void 0 ? String(this.chordConfig.position) : "";
-    this.settingsDialog.style.display = "block";
-    this.settingsBackdrop.style.display = "block";
-    this.positionSettingsDialog();
-    this.titleInput.focus();
-  }
-  /**
-   * Position settings dialog near the settings button
-   */
-  positionSettingsDialog() {
-    if (!this.settingsButton || !this.settingsDialog) return;
-    const buttonRect = this.settingsButton.getBoundingClientRect();
-    const dialogRect = this.settingsDialog.getBoundingClientRect();
-    let dialogX = buttonRect.left;
-    let dialogY = buttonRect.bottom + 5;
-    const padding = 10;
-    const maxX = window.innerWidth - dialogRect.width - padding;
-    const maxY = window.innerHeight - dialogRect.height - padding;
-    if (dialogX > maxX) dialogX = maxX;
-    if (dialogX < padding) dialogX = padding;
-    if (dialogY > maxY) dialogY = buttonRect.top - dialogRect.height - 5;
-    if (dialogY < padding) dialogY = padding;
-    this.settingsDialog.style.left = `${dialogX}px`;
-    this.settingsDialog.style.top = `${dialogY}px`;
-  }
-  /**
-   * Close the settings dialog
-   */
-  closeSettingsDialog() {
-    if (this.settingsDialog) {
-      this.settingsDialog.style.display = "none";
-    }
-    if (this.settingsBackdrop) {
-      this.settingsBackdrop.style.display = "none";
-    }
-  }
-  /**
-   * Save settings from the dialog
-   */
-  saveSettings() {
-    const title = this.titleInput.value.trim();
-    const positionStr = this.positionInput.value.trim();
-    this.chordConfig.title = title;
-    if (positionStr === "") {
-      this.chordConfig.position = void 0;
-    } else {
-      const position2 = parseInt(positionStr, 10);
-      if (isNaN(position2) || position2 < 0 || position2 > 30) {
-        alert("Position must be a number between 0 and 30");
-        return;
+}
+function buildAsciiOutput(title, stringData, openStrings, mutedStrings, numFrets, position2) {
+  var _a5;
+  const lines = [];
+  const titleLine = title ? `  ${title}` : ` `;
+  lines.push(titleLine);
+  if (openStrings.size > 0 || mutedStrings.size > 0) {
+    let openLine = "  ";
+    let lowestMarked = 6;
+    for (let str = 6; str >= 1; str--) {
+      if (openStrings.has(str) || mutedStrings.has(str)) {
+        lowestMarked = str;
       }
-      this.chordConfig.position = position2;
     }
-    this.config.noPosition = this.chordConfig.position === void 0;
-    this.closeSettingsDialog();
-    this.redraw();
-    this.triggerChange();
+    const showTo = lowestMarked > 4 ? 3 : lowestMarked;
+    for (let str = 6; str >= showTo; str--) {
+      if (openStrings.has(str)) {
+        openLine += "o";
+      } else if (mutedStrings.has(str)) {
+        openLine += "x";
+      } else {
+        openLine += " ";
+      }
+    }
+    lines.push(openLine);
   }
-  /**
-   * Get current chord configuration
-   * @returns {import("svguitar").Chord}
-   */
-  getChord() {
-    return { ...this.chordConfig };
+  for (let fret = 1; fret <= numFrets; fret++) {
+    let line = "";
+    if (fret === 1 && position2 !== void 0) {
+      line = `${position2} `;
+    } else {
+      line = "  ";
+    }
+    for (let str = 6; str >= 1; str--) {
+      const fingerInfo = (_a5 = stringData.get(str)) == null ? void 0 : _a5.get(fret);
+      if (fingerInfo) {
+        if (fingerInfo.color !== "#000000") {
+          line += "*";
+        } else if (fingerInfo.text) {
+          line += fingerInfo.text;
+        } else {
+          line += "o";
+        }
+      } else {
+        line += "|";
+      }
+    }
+    lines.push(line);
   }
-  /**
-   * Register a callback for when the chord changes
-   * @param {Function} callback - Called with updated fingers array
-   * @returns {EditableSVGuitarChord}
-   */
-  onChange(callback) {
-    this.changeCallback = callback;
-    return this;
+  return lines.join("\n");
+}
+function buildUnicodeOutput(title, stringData, openStrings, mutedStrings, numFrets, position2) {
+  var _a5;
+  const lines = [];
+  const titleLine = title ? `  ${title}` : ` `;
+  lines.push(titleLine);
+  if (openStrings.size > 0 || mutedStrings.size > 0) {
+    let openLine = "  ";
+    let lowestMarked = 6;
+    for (let str = 6; str >= 1; str--) {
+      if (openStrings.has(str) || mutedStrings.has(str)) {
+        lowestMarked = str;
+      }
+    }
+    const showTo = lowestMarked > 4 ? 3 : lowestMarked;
+    for (let str = 6; str >= showTo; str--) {
+      if (openStrings.has(str)) {
+        openLine += "\u25CB";
+      } else if (mutedStrings.has(str)) {
+        openLine += "\xD7";
+      } else {
+        openLine += " ";
+      }
+      if (str > showTo) openLine += " ";
+    }
+    if (showTo === 3 && lowestMarked > 4) {
+      openLine = openLine.trimEnd();
+    }
+    lines.push(openLine);
   }
-  /**
-   * Trigger the change callback if registered
-   */
-  triggerChange() {
-    if (this.changeCallback && typeof this.changeCallback === "function") {
-      this.changeCallback([...this.chordConfig.fingers]);
+  lines.push("  \u2552\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2555");
+  for (let fret = 1; fret <= numFrets; fret++) {
+    let line = "";
+    if (fret === 1 && position2 !== void 0) {
+      line = `${position2} `;
+    } else {
+      line = "  ";
+    }
+    for (let str = 6; str >= 1; str--) {
+      const fingerInfo = (_a5 = stringData.get(str)) == null ? void 0 : _a5.get(fret);
+      if (fingerInfo) {
+        if (fingerInfo.color !== "#000000") {
+          line += "\u25CF";
+        } else if (fingerInfo.text) {
+          line += fingerInfo.text;
+        } else {
+          line += "\u25CB";
+        }
+      } else {
+        line += "\u2502";
+      }
+      if (str > 1) line += " ";
+    }
+    lines.push(line);
+    if (fret < numFrets) {
+      lines.push("  \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524");
+    } else {
+      lines.push("  \u2514\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2518");
     }
   }
-  /**
-   * Clean up resources
-   */
-  destroy() {
-    if (this.dialog && this.dialog.parentNode) {
-      this.dialog.parentNode.removeChild(this.dialog);
-    }
-    if (this.backdrop && this.backdrop.parentNode) {
-      this.backdrop.parentNode.removeChild(this.backdrop);
-    }
-  }
-};
+  return lines.join("\n");
+}
 
 // node_modules/svguitar/dist/svguitar.es5.js
 var extendStatics = function(d2, b2) {
@@ -1826,8 +1238,8 @@ var Renderer = (
         curY = radius + radius * Math.sin(a2 * Math.PI / 180);
         points.push([curX, curY]);
       }
-      var lines = points.reduce(function(acc, _a6) {
-        var _b = __read(_a6, 2), posX = _b[0], posY = _b[1];
+      var lines = points.reduce(function(acc, _a5) {
+        var _b = __read(_a5, 2), posX = _b[0], posY = _b[1];
         return "".concat(acc, " L").concat(posX, " ").concat(posY);
       }, "");
       return "M".concat(curX, " ").concat(curY, " ").concat(lines);
@@ -1873,7 +1285,7 @@ var RoughJsRenderer = (
     RoughJsRenderer2.prototype.embedDefs = function() {
       var _this = this;
       setTimeout(function() {
-        var _a6, _b, _c;
+        var _a5, _b, _c;
         if (_this.svgNode.querySelector("defs [data-svguitar-def]")) {
           return;
         }
@@ -1884,7 +1296,7 @@ var RoughJsRenderer = (
         }
         var template = document.createElement("template");
         template.innerHTML = defs.trim();
-        var defsToAdd = (_c = (_b = (_a6 = template.content.firstChild) === null || _a6 === void 0 ? void 0 : _a6.firstChild) === null || _b === void 0 ? void 0 : _b.parentElement) === null || _c === void 0 ? void 0 : _c.children;
+        var defsToAdd = (_c = (_b = (_a5 = template.content.firstChild) === null || _a5 === void 0 ? void 0 : _a5.firstChild) === null || _b === void 0 ? void 0 : _b.parentElement) === null || _c === void 0 ? void 0 : _c.children;
         if (defsToAdd) {
           Array.from(defsToAdd).forEach(function(def) {
             def.setAttribute("data-svguitar-def", "true");
@@ -1899,7 +1311,7 @@ var RoughJsRenderer = (
       this.svgNode.appendChild(titleEl);
     };
     RoughJsRenderer2.prototype.circle = function(x2, y2, diameter, strokeWidth, strokeColor, fill, classes2) {
-      var _a6;
+      var _a5;
       var options = {
         fill: fill || "none",
         fillWeight: 2.5,
@@ -1910,7 +1322,7 @@ var RoughJsRenderer = (
         options.strokeWidth = strokeWidth;
       }
       var circle = this.rc.circle(x2 + diameter / 2, y2 + diameter / 2, diameter, options);
-      (_a6 = circle.classList).add.apply(_a6, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+      (_a5 = circle.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       this.svgNode.appendChild(circle);
       return RoughJsRenderer2.boxToElement(circle.getBBox(), function() {
         return circle ? circle.remove() : void 0;
@@ -1927,7 +1339,7 @@ var RoughJsRenderer = (
       this.svgNode.remove();
     };
     RoughJsRenderer2.prototype.line = function(x1, y1, x2, y2, strokeWidth, color, classes2) {
-      var _a6;
+      var _a5;
       if (strokeWidth > 5 && (x1 - x2 === 0 || y1 - y2 === 0)) {
         if (Math.abs(x1 - x2) > Math.abs(y1 - y2)) {
           this.rect(x1, y1, x2 - x1, strokeWidth, 0, color, color);
@@ -1939,12 +1351,12 @@ var RoughJsRenderer = (
           strokeWidth,
           stroke: color
         });
-        (_a6 = line.classList).add.apply(_a6, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+        (_a5 = line.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
         this.svgNode.appendChild(line);
       }
     };
     RoughJsRenderer2.prototype.rect = function(x2, y2, width2, height2, strokeWidth, strokeColor, classes2, fill, radius) {
-      var _a6, _b;
+      var _a5, _b;
       var rect2 = this.rc.rectangle(x2, y2, width2, height2, {
         // fill: fill || 'none',
         fill: "none",
@@ -1965,7 +1377,7 @@ var RoughJsRenderer = (
         roughness: 1.5
       });
       rect.setAttribute("transform", "translate(".concat(x2, ", ").concat(y2, ")"));
-      (_a6 = rect.classList).add.apply(_a6, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+      (_a5 = rect.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       (_b = rect2.classList).add.apply(_b, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       this.svgNode.appendChild(rect);
       this.svgNode.appendChild(rect2);
@@ -1974,7 +1386,7 @@ var RoughJsRenderer = (
       });
     };
     RoughJsRenderer2.prototype.triangle = function(x2, y2, size2, strokeWidth, strokeColor, classes2, fill) {
-      var _a6;
+      var _a5;
       var triangle = this.rc.path(Renderer.trianglePath(0, 0, size2), {
         fill: fill || "none",
         fillWeight: 2.5,
@@ -1982,14 +1394,14 @@ var RoughJsRenderer = (
         roughness: 1.5
       });
       triangle.setAttribute("transform", "translate(".concat(x2, ", ").concat(y2, ")"));
-      (_a6 = triangle.classList).add.apply(_a6, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+      (_a5 = triangle.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       this.svgNode.appendChild(triangle);
       return RoughJsRenderer2.boxToElement(triangle.getBBox(), function() {
         return triangle.remove();
       });
     };
     RoughJsRenderer2.prototype.pentagon = function(x2, y2, size2, strokeWidth, strokeColor, fill, classes2, spikes) {
-      var _a6;
+      var _a5;
       if (spikes === void 0) {
         spikes = 5;
       }
@@ -2000,7 +1412,7 @@ var RoughJsRenderer = (
         roughness: 1.5
       });
       pentagon.setAttribute("transform", "translate(".concat(x2, ", ").concat(y2, ")"));
-      (_a6 = pentagon.classList).add.apply(_a6, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+      (_a5 = pentagon.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       this.svgNode.appendChild(pentagon);
       return RoughJsRenderer2.boxToElement(pentagon.getBBox(), function() {
         return pentagon.remove();
@@ -2017,7 +1429,7 @@ var RoughJsRenderer = (
       this.svgNode.insertBefore(bg, this.svgNode.firstChild);
     };
     RoughJsRenderer2.prototype.text = function(text, x2, y2, fontSize, color, fontFamily, alignment, classes2, plain2) {
-      var _a6;
+      var _a5;
       var txtElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
       txtElem.setAttributeNS(null, "x", String(x2));
       txtElem.setAttributeNS(null, "y", String(y2));
@@ -2045,7 +1457,7 @@ var RoughJsRenderer = (
         default:
           throw new Error("Invalid alignment ".concat(alignment));
       }
-      (_a6 = txtElem.classList).add.apply(_a6, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+      (_a5 = txtElem.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       txtElem.setAttributeNS(null, "x", String(x2 + xOffset));
       txtElem.setAttributeNS(null, "y", String(y2 + (plain2 ? 0 : bbox2.height / 2)));
       return RoughJsRenderer2.boxToElement(txtElem.getBBox(), txtElem.remove.bind(txtElem));
@@ -2636,16 +2048,16 @@ var Color = class _Color {
     } else if (typeof a2 === "string") {
       if (isRgb.test(a2)) {
         const noWhitespace = a2.replace(whitespace, "");
-        const [_a7, _b2, _c2] = rgb.exec(noWhitespace).slice(1, 4).map((v2) => parseInt(v2));
-        Object.assign(this, { _a: _a7, _b: _b2, _c: _c2, _d: 0, space: "rgb" });
+        const [_a6, _b2, _c2] = rgb.exec(noWhitespace).slice(1, 4).map((v2) => parseInt(v2));
+        Object.assign(this, { _a: _a6, _b: _b2, _c: _c2, _d: 0, space: "rgb" });
       } else if (isHex.test(a2)) {
         const hexParse = (v2) => parseInt(v2, 16);
-        const [, _a7, _b2, _c2] = hex.exec(sixDigitHex(a2)).map(hexParse);
-        Object.assign(this, { _a: _a7, _b: _b2, _c: _c2, _d: 0, space: "rgb" });
+        const [, _a6, _b2, _c2] = hex.exec(sixDigitHex(a2)).map(hexParse);
+        Object.assign(this, { _a: _a6, _b: _b2, _c: _c2, _d: 0, space: "rgb" });
       } else throw Error("Unsupported string format, can't construct Color");
     }
-    const { _a: _a6, _b, _c, _d } = this;
-    const components = this.space === "rgb" ? { r: _a6, g: _b, b: _c } : this.space === "xyz" ? { x: _a6, y: _b, z: _c } : this.space === "hsl" ? { h: _a6, s: _b, l: _c } : this.space === "lab" ? { l: _a6, a: _b, b: _c } : this.space === "lch" ? { l: _a6, c: _b, h: _c } : this.space === "cmyk" ? { c: _a6, m: _b, y: _c, k: _d } : {};
+    const { _a: _a5, _b, _c, _d } = this;
+    const components = this.space === "rgb" ? { r: _a5, g: _b, b: _c } : this.space === "xyz" ? { x: _a5, y: _b, z: _c } : this.space === "hsl" ? { h: _a5, s: _b, l: _c } : this.space === "lab" ? { l: _a5, a: _b, b: _c } : this.space === "lch" ? { l: _a5, c: _b, h: _c } : this.space === "cmyk" ? { c: _a5, m: _b, y: _c, k: _d } : {};
     Object.assign(this, components);
   }
   /*
@@ -2747,8 +2159,8 @@ var Color = class _Color {
     return color;
   }
   hsl() {
-    const { _a: _a6, _b, _c } = this.rgb();
-    const [r2, g2, b2] = [_a6, _b, _c].map((v2) => v2 / 255);
+    const { _a: _a5, _b, _c } = this.rgb();
+    const [r2, g2, b2] = [_a5, _b, _c].map((v2) => v2 / 255);
     const max = Math.max(r2, g2, b2);
     const min = Math.min(r2, g2, b2);
     const l2 = (max + min) / 2;
@@ -2760,8 +2172,8 @@ var Color = class _Color {
     return color;
   }
   cmyk() {
-    const { _a: _a6, _b, _c } = this.rgb();
-    const [r2, g2, b2] = [_a6, _b, _c].map((v2) => v2 / 255);
+    const { _a: _a5, _b, _c } = this.rgb();
+    const [r2, g2, b2] = [_a5, _b, _c].map((v2) => v2 / 255);
     const k2 = Math.min(1 - r2, 1 - g2, 1 - b2);
     if (k2 === 1) {
       return new _Color(0, 0, 0, 1, "cmyk");
@@ -2776,10 +2188,10 @@ var Color = class _Color {
   Input and Output methods
   */
   _clamped() {
-    const { _a: _a6, _b, _c } = this.rgb();
+    const { _a: _a5, _b, _c } = this.rgb();
     const { max, min, round } = Math;
     const format = (v2) => max(0, min(round(v2), 255));
-    return [_a6, _b, _c].map(format);
+    return [_a5, _b, _c].map(format);
   }
   toHex() {
     const [r2, g2, b2] = this._clamped().map(componentHex);
@@ -2794,8 +2206,8 @@ var Color = class _Color {
     return string;
   }
   toArray() {
-    const { _a: _a6, _b, _c, _d, space } = this;
-    return [_a6, _b, _c, _d, space];
+    const { _a: _a5, _b, _c, _d, space } = this;
+    return [_a5, _b, _c, _d, space];
   }
   /*
   Generating random colors
@@ -7327,23 +6739,23 @@ var SVGuitarChord = (
       });
     }
     SVGuitarChord2.plugin = function(plugin) {
-      var _a6;
+      var _a5;
       var currentPlugins = this.plugins;
-      var BaseWithPlugins = (_a6 = /** @class */
+      var BaseWithPlugins = (_a5 = /** @class */
       (function(_super) {
         __extends(class_1, _super);
         function class_1() {
           return _super !== null && _super.apply(this, arguments) || this;
         }
         return class_1;
-      })(this), _a6.plugins = currentPlugins.concat(plugin), _a6);
+      })(this), _a5.plugins = currentPlugins.concat(plugin), _a5);
       return BaseWithPlugins;
     };
     Object.defineProperty(SVGuitarChord2.prototype, "renderer", {
       get: function() {
-        var _a6;
+        var _a5;
         if (!this.rendererInternal) {
-          var style = (_a6 = this.settings.style) !== null && _a6 !== void 0 ? _a6 : defaultSettings.style;
+          var style = (_a5 = this.settings.style) !== null && _a5 !== void 0 ? _a5 : defaultSettings.style;
           switch (style) {
             case ChordStyle.normal:
               this.rendererInternal = new SvgJsRenderer(this.container);
@@ -7374,14 +6786,14 @@ var SVGuitarChord = (
       return this;
     };
     SVGuitarChord2.prototype.draw = function() {
-      var _a6;
+      var _a5;
       this.clear();
       this.drawBackground();
       if (this.settings.svgTitle) {
         this.renderer.title(this.settings.svgTitle);
       }
       var y2;
-      y2 = this.drawTitle((_a6 = this.settings.titleFontSize) !== null && _a6 !== void 0 ? _a6 : defaultSettings.titleFontSize);
+      y2 = this.drawTitle((_a5 = this.settings.titleFontSize) !== null && _a5 !== void 0 ? _a5 : defaultSettings.titleFontSize);
       y2 = this.drawEmptyStringIndicators(y2);
       y2 = this.drawTopFret(y2);
       this.drawPosition(y2);
@@ -7423,11 +6835,11 @@ var SVGuitarChord = (
     };
     SVGuitarChord2.prototype.drawTunings = function(y2) {
       var _this = this;
-      var _a6, _b, _c, _d, _e;
+      var _a5, _b, _c, _d, _e;
       var padding = this.fretSpacing() / 5;
       var stringXPositions = this.stringXPos();
       var strings = this.numStrings();
-      var color = (_b = (_a6 = this.settings.tuningsColor) !== null && _a6 !== void 0 ? _a6 : this.settings.color) !== null && _b !== void 0 ? _b : defaultSettings.color;
+      var color = (_b = (_a5 = this.settings.tuningsColor) !== null && _a5 !== void 0 ? _a5 : this.settings.color) !== null && _b !== void 0 ? _b : defaultSettings.color;
       var tuning = (_c = this.settings.tuning) !== null && _c !== void 0 ? _c : defaultSettings.tuning;
       var fontFamily = (_d = this.settings.fontFamily) !== null && _d !== void 0 ? _d : defaultSettings.fontFamily;
       var tuningsFontSize = (_e = this.settings.tuningsFontSize) !== null && _e !== void 0 ? _e : defaultSettings.tuningsFontSize;
@@ -7435,7 +6847,7 @@ var SVGuitarChord = (
       tuning.forEach(function(tuning_, i) {
         if (i < strings) {
           var classNames = [ElementType.TUNING, "".concat(ElementType.TUNING, "-").concat(i)];
-          var _a7 = _this.coordinates(stringXPositions[i], y2 + padding), textX = _a7.x, textY = _a7.y;
+          var _a6 = _this.coordinates(stringXPositions[i], y2 + padding), textX = _a6.x, textY = _a6.y;
           var tuningText = _this.renderer.text(tuning_, textX, textY, tuningsFontSize, color, fontFamily, Alignment.MIDDLE, classNames, true);
           if (tuning_) {
             text = tuningText;
@@ -7448,12 +6860,12 @@ var SVGuitarChord = (
       return y2;
     };
     SVGuitarChord2.prototype.drawWatermark = function(y2) {
-      var _a6, _b, _c, _d, _e, _f;
+      var _a5, _b, _c, _d, _e, _f;
       if (!this.settings.watermark) {
         return y2;
       }
       var padding = this.fretSpacing() / 5;
-      var orientation = (_a6 = this.settings.orientation) !== null && _a6 !== void 0 ? _a6 : defaultSettings.orientation;
+      var orientation = (_a5 = this.settings.orientation) !== null && _a5 !== void 0 ? _a5 : defaultSettings.orientation;
       var stringXPositions = this.stringXPos();
       var endX = stringXPositions[stringXPositions.length - 1];
       var startX = stringXPositions[0];
@@ -7476,8 +6888,8 @@ var SVGuitarChord = (
     };
     SVGuitarChord2.prototype.drawPosition = function(y2) {
       var _this = this;
-      var _a6, _b, _c, _d, _e, _f, _g, _h, _j;
-      var position2 = (_b = (_a6 = this.chordInternal.position) !== null && _a6 !== void 0 ? _a6 : this.settings.position) !== null && _b !== void 0 ? _b : defaultSettings.position;
+      var _a5, _b, _c, _d, _e, _f, _g, _h, _j;
+      var position2 = (_b = (_a5 = this.chordInternal.position) !== null && _a5 !== void 0 ? _a5 : this.settings.position) !== null && _b !== void 0 ? _b : defaultSettings.position;
       var noPosition = (_c = this.settings.noPosition) !== null && _c !== void 0 ? _c : defaultSettings.noPosition;
       if (position2 <= 1 || noPosition) {
         return;
@@ -7525,8 +6937,8 @@ var SVGuitarChord = (
       this.renderer.text(text, textX, textY, size2, color, fontFamily, Alignment.MIDDLE, className, true);
     };
     SVGuitarChord2.prototype.drawTopEdges = function(y2) {
-      var _a6;
-      var orientation = (_a6 = this.settings.orientation) !== null && _a6 !== void 0 ? _a6 : defaultSettings.orientation;
+      var _a5;
+      var orientation = (_a5 = this.settings.orientation) !== null && _a5 !== void 0 ? _a5 : defaultSettings.orientation;
       var xTopRight = orientation === Orientation.vertical ? constants.width : y2;
       this.renderer.circle(0, 0, 0, 0, "transparent", "none", "top-left");
       this.renderer.circle(xTopRight, 0, 0, 0, "transparent", "none", "top-right");
@@ -7537,9 +6949,9 @@ var SVGuitarChord = (
       }
     };
     SVGuitarChord2.prototype.drawTopFret = function(y2) {
-      var _a6, _b, _c, _d, _e, _f, _g, _h;
+      var _a5, _b, _c, _d, _e, _f, _g, _h;
       var stringXpositions = this.stringXPos();
-      var strokeWidth = (_a6 = this.settings.strokeWidth) !== null && _a6 !== void 0 ? _a6 : defaultSettings.strokeWidth;
+      var strokeWidth = (_a5 = this.settings.strokeWidth) !== null && _a5 !== void 0 ? _a5 : defaultSettings.strokeWidth;
       var nutWidth = (_c = (_b = this.settings.topFretWidth) !== null && _b !== void 0 ? _b : this.settings.nutWidth) !== null && _c !== void 0 ? _c : defaultSettings.nutWidth;
       var startX = stringXpositions[0] - strokeWidth / 2;
       var endX = stringXpositions[stringXpositions.length - 1] + strokeWidth / 2;
@@ -7558,9 +6970,9 @@ var SVGuitarChord = (
       return y2 + fretSize;
     };
     SVGuitarChord2.prototype.stringXPos = function() {
-      var _a6;
+      var _a5;
       var strings = this.numStrings();
-      var sidePadding = (_a6 = this.settings.sidePadding) !== null && _a6 !== void 0 ? _a6 : defaultSettings.sidePadding;
+      var sidePadding = (_a5 = this.settings.sidePadding) !== null && _a5 !== void 0 ? _a5 : defaultSettings.sidePadding;
       var startX = constants.width * sidePadding;
       var stringsSpacing = this.stringSpacing();
       return range(strings).map(function(i) {
@@ -7568,16 +6980,16 @@ var SVGuitarChord = (
       });
     };
     SVGuitarChord2.prototype.numStrings = function() {
-      var _a6;
-      return (_a6 = this.settings.strings) !== null && _a6 !== void 0 ? _a6 : defaultSettings.strings;
+      var _a5;
+      return (_a5 = this.settings.strings) !== null && _a5 !== void 0 ? _a5 : defaultSettings.strings;
     };
     SVGuitarChord2.prototype.numFrets = function() {
-      var _a6;
-      return (_a6 = this.settings.frets) !== null && _a6 !== void 0 ? _a6 : defaultSettings.frets;
+      var _a5;
+      return (_a5 = this.settings.frets) !== null && _a5 !== void 0 ? _a5 : defaultSettings.frets;
     };
     SVGuitarChord2.prototype.stringSpacing = function() {
-      var _a6;
-      var sidePadding = (_a6 = this.settings.sidePadding) !== null && _a6 !== void 0 ? _a6 : defaultSettings.sidePadding;
+      var _a5;
+      var sidePadding = (_a5 = this.settings.sidePadding) !== null && _a5 !== void 0 ? _a5 : defaultSettings.sidePadding;
       var strings = this.numStrings();
       var startX = constants.width * sidePadding;
       var endX = constants.width - startX;
@@ -7585,9 +6997,9 @@ var SVGuitarChord = (
       return width2 / (strings - 1);
     };
     SVGuitarChord2.prototype.fretSpacing = function() {
-      var _a6;
+      var _a5;
       var stringSpacing = this.stringSpacing();
-      var fretSize = (_a6 = this.settings.fretSize) !== null && _a6 !== void 0 ? _a6 : defaultSettings.fretSize;
+      var fretSize = (_a5 = this.settings.fretSize) !== null && _a5 !== void 0 ? _a5 : defaultSettings.fretSize;
       return stringSpacing * fretSize;
     };
     SVGuitarChord2.prototype.fretLinesYPos = function(startY) {
@@ -7603,28 +7015,28 @@ var SVGuitarChord = (
     };
     SVGuitarChord2.prototype.drawEmptyStringIndicators = function(y2) {
       var _this = this;
-      var _a6, _b, _c;
+      var _a5, _b, _c;
       var stringXPositions = this.stringXPos();
       var stringSpacing = this.stringSpacing();
-      var emptyStringIndicatorSize = (_a6 = this.settings.emptyStringIndicatorSize) !== null && _a6 !== void 0 ? _a6 : defaultSettings.emptyStringIndicatorSize;
+      var emptyStringIndicatorSize = (_a5 = this.settings.emptyStringIndicatorSize) !== null && _a5 !== void 0 ? _a5 : defaultSettings.emptyStringIndicatorSize;
       var size2 = emptyStringIndicatorSize * stringSpacing;
       var padding = size2 / 3;
       var color = (_b = this.settings.color) !== null && _b !== void 0 ? _b : defaultSettings.color;
       var strokeWidth = (_c = this.settings.strokeWidth) !== null && _c !== void 0 ? _c : defaultSettings.strokeWidth;
       var hasEmpty = false;
-      this.chordInternal.fingers.filter(function(_a7) {
-        var _b2 = __read(_a7, 2), value = _b2[1];
+      this.chordInternal.fingers.filter(function(_a6) {
+        var _b2 = __read(_a6, 2), value = _b2[1];
         return value === SILENT || value === OPEN;
-      }).map(function(_a7) {
-        var _b2 = __read(_a7, 3), index = _b2[0], value = _b2[1], textOrOptions = _b2[2];
+      }).map(function(_a6) {
+        var _b2 = __read(_a6, 3), index = _b2[0], value = _b2[1], textOrOptions = _b2[2];
         return [
           _this.toArrayIndex(index),
           value,
           textOrOptions
         ];
-      }).forEach(function(_a7) {
+      }).forEach(function(_a6) {
         var _b2, _c2, _d, _e, _f, _g;
-        var _h = __read(_a7, 3), stringIndex = _h[0], value = _h[1], textOrOptions = _h[2];
+        var _h = __read(_a6, 3), stringIndex = _h[0], value = _h[1], textOrOptions = _h[2];
         hasEmpty = true;
         var fingerOptions = SVGuitarChord2.getFingerOptions(textOrOptions);
         var effectiveStrokeWidth = (_b2 = fingerOptions.strokeWidth) !== null && _b2 !== void 0 ? _b2 : strokeWidth;
@@ -7662,9 +7074,9 @@ var SVGuitarChord = (
     };
     SVGuitarChord2.prototype.drawGrid = function(y2) {
       var _this = this;
-      var _a6, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
+      var _a5, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
       var frets = this.numFrets();
-      var fretSize = (_a6 = this.settings.fretSize) !== null && _a6 !== void 0 ? _a6 : defaultSettings.fretSize;
+      var fretSize = (_a5 = this.settings.fretSize) !== null && _a5 !== void 0 ? _a5 : defaultSettings.fretSize;
       var relativeFingerSize = (_b = this.settings.fingerSize) !== null && _b !== void 0 ? _b : defaultSettings.fingerSize;
       var stringXPositions = this.stringXPos();
       var fretYPositions = this.fretLinesYPos(y2);
@@ -7683,19 +7095,19 @@ var SVGuitarChord = (
       var fingerTextSize = (_l = this.settings.fingerTextSize) !== null && _l !== void 0 ? _l : defaultSettings.fingerTextSize;
       fretYPositions.forEach(function(fretY, i) {
         var classNames = [ElementType.FRET, "".concat(ElementType.FRET, "-").concat(i)];
-        var _a7 = _this.coordinates(startX, fretY), lineX1 = _a7.x, lineY1 = _a7.y;
+        var _a6 = _this.coordinates(startX, fretY), lineX1 = _a6.x, lineY1 = _a6.y;
         var _b2 = _this.coordinates(endX, fretY), lineX2 = _b2.x, lineY2 = _b2.y;
         _this.renderer.line(lineX1, lineY1, lineX2, lineY2, strokeWidth, fretColor, classNames);
       });
       stringXPositions.forEach(function(stringX, i) {
         var classNames = [ElementType.STRING, "".concat(ElementType.STRING, "-").concat(i)];
-        var _a7 = _this.coordinates(stringX, y2), lineX1 = _a7.x, lineY1 = _a7.y;
+        var _a6 = _this.coordinates(stringX, y2), lineX1 = _a6.x, lineY1 = _a6.y;
         var _b2 = _this.coordinates(stringX, y2 + height2 + strokeWidth / 2), lineX2 = _b2.x, lineY2 = _b2.y;
         _this.renderer.line(lineX1, lineY1, lineX2, lineY2, strokeWidth, fretColor, classNames);
       });
-      this.chordInternal.barres.forEach(function(_a7) {
+      this.chordInternal.barres.forEach(function(_a6) {
         var _b2, _c2, _d2, _e2;
-        var fret = _a7.fret, fromString = _a7.fromString, toString = _a7.toString, text = _a7.text, color = _a7.color, textColor = _a7.textColor, strokeColor = _a7.strokeColor, className = _a7.className, individualBarreChordStrokeWidth = _a7.strokeWidth;
+        var fret = _a6.fret, fromString = _a6.fromString, toString = _a6.toString, text = _a6.text, color = _a6.color, textColor = _a6.textColor, strokeColor = _a6.strokeColor, className = _a6.className, individualBarreChordStrokeWidth = _a6.strokeWidth;
         var barreCenterY = fretYPositions[fret - 1] - strokeWidth / 4 - fretSpacing / 2;
         var fromStringX = stringXPositions[_this.toArrayIndex(fromString)];
         var distance = Math.abs(toString - fromString) * stringSpacing;
@@ -7715,18 +7127,18 @@ var SVGuitarChord = (
           _this.renderer.text(text, textX, textY, fingerTextSize, textColor !== null && textColor !== void 0 ? textColor : fingerTextColor, fontFamily, Alignment.MIDDLE, textClassNames, true);
         }
       });
-      this.chordInternal.fingers.filter(function(_a7) {
-        var _b2 = __read(_a7, 2), value = _b2[1];
+      this.chordInternal.fingers.filter(function(_a6) {
+        var _b2 = __read(_a6, 2), value = _b2[1];
         return value !== SILENT && value !== OPEN;
-      }).map(function(_a7) {
-        var _b2 = __read(_a7, 3), stringIndex = _b2[0], fretIndex = _b2[1], text = _b2[2];
+      }).map(function(_a6) {
+        var _b2 = __read(_a6, 3), stringIndex = _b2[0], fretIndex = _b2[1], text = _b2[2];
         return [
           _this.toArrayIndex(stringIndex),
           fretIndex,
           text
         ];
-      }).forEach(function(_a7) {
-        var _b2 = __read(_a7, 3), stringIndex = _b2[0], fretIndex = _b2[1], textOrOptions = _b2[2];
+      }).forEach(function(_a6) {
+        var _b2 = __read(_a6, 3), stringIndex = _b2[0], fretIndex = _b2[1], textOrOptions = _b2[2];
         var fingerCenterX = startX + stringIndex * stringSpacing;
         var fingerCenterY = y2 + fretIndex * fretSpacing - fretSpacing / 2;
         var fingerOptions = SVGuitarChord2.getFingerOptions(textOrOptions);
@@ -7740,7 +7152,7 @@ var SVGuitarChord = (
       });
       if ((_m = this.settings.showFretMarkers) !== null && _m !== void 0 ? _m : defaultSettings.showFretMarkers) {
         (_o = this.settings.fretMarkers) === null || _o === void 0 ? void 0 : _o.forEach(function(fretMarker) {
-          var _a7, _b2, _c2, _d2, _e2;
+          var _a6, _b2, _c2, _d2, _e2;
           var fretMarkerOptions = typeof fretMarker == "number" ? {
             fret: fretMarker
           } : fretMarker;
@@ -7750,7 +7162,7 @@ var SVGuitarChord = (
           var fretMarkerIndex = fretMarkerOptions.fret;
           var fretMarkerCenterX = constants.width / 2;
           var fretMarkerCenterY = y2 + (fretMarkerIndex + 1) * fretSpacing - fretSpacing / 2;
-          var fretMarkerSize = (_a7 = _this.settings.fretMarkerSize) !== null && _a7 !== void 0 ? _a7 : defaultSettings.fretMarkerSize;
+          var fretMarkerSize = (_a6 = _this.settings.fretMarkerSize) !== null && _a6 !== void 0 ? _a6 : defaultSettings.fretMarkerSize;
           var fretMarkerColor = (_b2 = _this.settings.fretMarkerColor) !== null && _b2 !== void 0 ? _b2 : defaultSettings.fretMarkerColor;
           var classNames = __spreadArray([
             ElementType.FRET_MARKER,
@@ -7771,9 +7183,9 @@ var SVGuitarChord = (
       return y2 + height2;
     };
     SVGuitarChord2.prototype.drawFretMarker = function(x2, y2, size2, color, fretMarketOptions, classNames) {
-      var _a6, _b, _c, _d, _e, _f, _g, _h;
+      var _a5, _b, _c, _d, _e, _f, _g, _h;
       var markerOptions = typeof fretMarketOptions === "number" ? { fret: fretMarketOptions } : fretMarketOptions;
-      var shape = (_a6 = markerOptions.shape) !== null && _a6 !== void 0 ? _a6 : defaultSettings.fretMarkerShape;
+      var shape = (_a5 = markerOptions.shape) !== null && _a5 !== void 0 ? _a5 : defaultSettings.fretMarkerShape;
       var fretMarkerColor = (_c = (_b = markerOptions.color) !== null && _b !== void 0 ? _b : this.settings.fretMarkerColor) !== null && _c !== void 0 ? _c : defaultSettings.fretMarkerColor;
       var fretMarkerStrokeColor = (_e = (_d = markerOptions.strokeColor) !== null && _d !== void 0 ? _d : this.settings.fretMarkerStrokeColor) !== null && _e !== void 0 ? _e : color;
       var fretMarkerStrokeWidth = (_g = (_f = markerOptions.strokeWidth) !== null && _f !== void 0 ? _f : this.settings.fretMarkerStrokeWidth) !== null && _g !== void 0 ? _g : 0;
@@ -7785,8 +7197,8 @@ var SVGuitarChord = (
       this.drawShape(shape, x0, y0, fretMarkerSize, fretMarkerStrokeWidth, fretMarkerStrokeColor, fretMarkerColor !== null && fretMarkerColor !== void 0 ? fretMarkerColor : color, classNamesWithShape);
     };
     SVGuitarChord2.prototype.drawFinger = function(x2, y2, size2, color, textSize, fontFamily, fingerOptions, classNames) {
-      var _a6, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
-      var shape = (_a6 = fingerOptions.shape) !== null && _a6 !== void 0 ? _a6 : defaultSettings.shape;
+      var _a5, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+      var shape = (_a5 = fingerOptions.shape) !== null && _a5 !== void 0 ? _a5 : defaultSettings.shape;
       var fingerTextColor = (_c = (_b = fingerOptions.textColor) !== null && _b !== void 0 ? _b : this.settings.fingerTextColor) !== null && _c !== void 0 ? _c : defaultSettings.fingerTextColor;
       var fingerStrokeColor = (_g = (_f = (_e = (_d = fingerOptions.strokeColor) !== null && _d !== void 0 ? _d : this.settings.fingerStrokeColor) !== null && _e !== void 0 ? _e : this.settings.fingerColor) !== null && _f !== void 0 ? _f : this.settings.color) !== null && _g !== void 0 ? _g : defaultSettings.color;
       var fingerStrokeWidth = (_j = (_h = fingerOptions.strokeWidth) !== null && _h !== void 0 ? _h : this.settings.fingerStrokeWidth) !== null && _j !== void 0 ? _j : defaultSettings.fingerStrokeWidth;
@@ -7822,8 +7234,8 @@ var SVGuitarChord = (
       }
     };
     SVGuitarChord2.prototype.drawTitle = function(size2) {
-      var _a6, _b, _c, _d, _e;
-      var color = (_a6 = this.settings.color) !== null && _a6 !== void 0 ? _a6 : defaultSettings.color;
+      var _a5, _b, _c, _d, _e;
+      var color = (_a5 = this.settings.color) !== null && _a5 !== void 0 ? _a5 : defaultSettings.color;
       var titleBottomMargin = (_b = this.settings.titleBottomMargin) !== null && _b !== void 0 ? _b : defaultSettings.titleBottomMargin;
       var fontFamily = (_c = this.settings.fontFamily) !== null && _c !== void 0 ? _c : defaultSettings.fontFamily;
       var title = (_e = (_d = this.chordInternal.title) !== null && _d !== void 0 ? _d : this.settings.title) !== null && _e !== void 0 ? _e : this.settings.fixedDiagramPosition ? "X" : "";
@@ -7900,8 +7312,8 @@ var SVGuitarChord = (
     };
     Object.defineProperty(SVGuitarChord2.prototype, "orientation", {
       get: function() {
-        var _a6;
-        return (_a6 = this.settings.orientation) !== null && _a6 !== void 0 ? _a6 : defaultSettings.orientation;
+        var _a5;
+        return (_a5 = this.settings.orientation) !== null && _a5 !== void 0 ? _a5 : defaultSettings.orientation;
       },
       enumerable: false,
       configurable: true
@@ -7910,6 +7322,781 @@ var SVGuitarChord = (
     return SVGuitarChord2;
   })()
 );
+
+// lib/editableSVGuitar.js
+var DOT_COLORS = {
+  RED: "#e74c3c",
+  BLACK: "#000000"
+};
+var EditableSVGuitarChord = class {
+  /**
+   * @param {HTMLElement} container
+   * @param {any} SVGuitarChordClass
+   */
+  constructor(container, SVGuitarChordClass = SVGuitarChord) {
+    this.container = container;
+    this.SVGuitarChordClass = SVGuitarChordClass;
+    this.chordConfig = { fingers: [], barres: [], title: void 0, position: void 0 };
+    this.config = { frets: 5, noPosition: true };
+    this.svgChord = null;
+    this.isDialogOpen = false;
+    this.controlsCreated = false;
+    this.currentEditElement = null;
+    this.changeCallback = null;
+    if (typeof document !== "undefined") {
+      this.createControls();
+    }
+    this.addCustomCSS();
+  }
+  /**
+   * Create controls and containers
+   */
+  createControls() {
+    this.controlsCreated = true;
+    this.wrapper = document.createElement("div");
+    this.wrapper.className = "editable-svguitar-wrapper";
+    this.wrapper.style.cssText = "position: relative;";
+    this.container.appendChild(this.wrapper);
+    this.settingsButton = document.createElement("button");
+    this.settingsButton.className = "editable-svguitar-settings-btn";
+    this.settingsButton.innerHTML = "\u2699\uFE0F";
+    this.settingsButton.title = "Edit title and position";
+    this.settingsButton.style.cssText = `
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      background: white;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 14px;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    `;
+    this.settingsButton.addEventListener("click", () => this.openSettingsDialog());
+    this.wrapper.appendChild(this.settingsButton);
+    this.svgContainer = document.createElement("div");
+    this.svgContainer.className = "editable-svguitar-svg";
+    this.wrapper.appendChild(this.svgContainer);
+    this.createDialog();
+    this.createSettingsDialog();
+  }
+  /**
+   * Create the settings dialog for title and position
+   */
+  createSettingsDialog() {
+    this.settingsDialog = document.createElement("div");
+    this.settingsDialog.className = "editable-svguitar-settings-dialog";
+    this.settingsDialog.style.cssText = `
+      display: none;
+      position: absolute;
+      background: white;
+      border: 2px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      z-index: 1000;
+      min-width: 280px;
+    `;
+    const title = document.createElement("h3");
+    title.textContent = "Chord Settings";
+    title.style.cssText = "margin: 0 0 15px 0; font-size: 16px;";
+    const titleSection = document.createElement("div");
+    titleSection.style.cssText = "margin-bottom: 15px;";
+    const titleLabel = document.createElement("label");
+    titleLabel.textContent = "Title (optional): ";
+    titleLabel.style.cssText = "display: block; margin-bottom: 5px; font-weight: bold;";
+    this.titleInput = document.createElement("input");
+    this.titleInput.type = "text";
+    this.titleInput.placeholder = "e.g., A min, G7";
+    this.titleInput.style.cssText = "width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;";
+    titleLabel.appendChild(this.titleInput);
+    titleSection.appendChild(titleLabel);
+    const positionSection = document.createElement("div");
+    positionSection.style.cssText = "margin-bottom: 15px;";
+    const positionLabel = document.createElement("label");
+    positionLabel.textContent = "Position (optional): ";
+    positionLabel.style.cssText = "display: block; margin-bottom: 5px; font-weight: bold;";
+    this.positionInput = document.createElement("input");
+    this.positionInput.type = "number";
+    this.positionInput.min = "0";
+    this.positionInput.max = "30";
+    this.positionInput.placeholder = "0-30";
+    this.positionInput.style.cssText = "width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;";
+    positionLabel.appendChild(this.positionInput);
+    positionSection.appendChild(positionLabel);
+    const buttonDiv = document.createElement("div");
+    buttonDiv.style.cssText = "display: flex; gap: 10px; justify-content: flex-end;";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.style.cssText = "padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;";
+    cancelBtn.addEventListener("click", () => this.closeSettingsDialog());
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "Save";
+    saveBtn.style.cssText = "padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;";
+    saveBtn.addEventListener("click", () => this.saveSettings());
+    buttonDiv.appendChild(cancelBtn);
+    buttonDiv.appendChild(saveBtn);
+    this.settingsDialog.appendChild(title);
+    this.settingsDialog.appendChild(titleSection);
+    this.settingsDialog.appendChild(positionSection);
+    this.settingsDialog.appendChild(buttonDiv);
+    document.body.appendChild(this.settingsDialog);
+    this.settingsBackdrop = document.createElement("div");
+    this.settingsBackdrop.className = "editable-svguitar-settings-backdrop";
+    this.settingsBackdrop.style.cssText = `
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    `;
+    this.settingsBackdrop.addEventListener("click", () => this.closeSettingsDialog());
+    document.body.appendChild(this.settingsBackdrop);
+  }
+  /**
+   * Create the edit dialog
+   */
+  createDialog() {
+    this.dialog = document.createElement("div");
+    this.dialog.className = "editable-svguitar-dialog";
+    this.dialog.style.cssText = `
+      display: none;
+      position: absolute;
+      background: white;
+      border: 2px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      z-index: 1000;
+      min-width: 250px;
+    `;
+    const title = document.createElement("h3");
+    title.textContent = "Edit Dot";
+    title.style.cssText = "margin: 0 0 15px 0; font-size: 16px;";
+    const colorSection = document.createElement("div");
+    colorSection.style.cssText = "margin-bottom: 15px;";
+    const colorLabel = document.createElement("div");
+    colorLabel.textContent = "Color:";
+    colorLabel.style.cssText = "font-weight: bold; margin-bottom: 8px;";
+    colorSection.appendChild(colorLabel);
+    const colorOptions = document.createElement("div");
+    colorOptions.style.cssText = "display: flex; gap: 15px;";
+    const redOption = document.createElement("label");
+    redOption.style.cssText = "display: flex; align-items: center; cursor: pointer;";
+    this.redRadio = document.createElement("input");
+    this.redRadio.type = "radio";
+    this.redRadio.name = "dotColor";
+    this.redRadio.value = DOT_COLORS.RED;
+    this.redRadio.addEventListener("change", () => this.updateDotColor());
+    const redLabel = document.createElement("span");
+    redLabel.textContent = "Red";
+    redLabel.style.cssText = "margin-left: 5px; color: #e74c3c; font-weight: bold;";
+    redOption.appendChild(this.redRadio);
+    redOption.appendChild(redLabel);
+    const blackOption = document.createElement("label");
+    blackOption.style.cssText = "display: flex; align-items: center; cursor: pointer;";
+    this.blackRadio = document.createElement("input");
+    this.blackRadio.type = "radio";
+    this.blackRadio.name = "dotColor";
+    this.blackRadio.value = DOT_COLORS.BLACK;
+    this.blackRadio.checked = true;
+    this.blackRadio.addEventListener("change", () => this.updateDotColor());
+    const blackLabel = document.createElement("span");
+    blackLabel.textContent = "Black";
+    blackLabel.style.cssText = "margin-left: 5px; color: #000000; font-weight: bold;";
+    blackOption.appendChild(this.blackRadio);
+    blackOption.appendChild(blackLabel);
+    colorOptions.appendChild(redOption);
+    colorOptions.appendChild(blackOption);
+    colorSection.appendChild(colorOptions);
+    this.textSection = document.createElement("div");
+    this.textSection.style.cssText = "margin-bottom: 15px;";
+    const textLabel = document.createElement("label");
+    textLabel.textContent = "Text (optional): ";
+    textLabel.style.cssText = "display: block; margin-bottom: 5px; font-weight: bold;";
+    this.textInput = document.createElement("input");
+    this.textInput.type = "text";
+    this.textInput.maxLength = 2;
+    this.textInput.placeholder = "1-2 chars";
+    this.textInput.style.cssText = "width: 60px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;";
+    this.textInput.addEventListener("input", () => this.updateDotText());
+    textLabel.appendChild(this.textInput);
+    this.textSection.appendChild(textLabel);
+    const buttonDiv = document.createElement("div");
+    buttonDiv.style.cssText = "display: flex; gap: 10px; justify-content: flex-end;";
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "Remove";
+    removeBtn.style.cssText = "padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;";
+    removeBtn.addEventListener("click", () => this.removeDot());
+    const doneBtn = document.createElement("button");
+    doneBtn.textContent = "Done";
+    doneBtn.style.cssText = "padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;";
+    doneBtn.addEventListener("click", () => this.closeDialog());
+    buttonDiv.appendChild(removeBtn);
+    buttonDiv.appendChild(doneBtn);
+    this.dialog.appendChild(title);
+    this.dialog.appendChild(colorSection);
+    this.dialog.appendChild(this.textSection);
+    this.dialog.appendChild(buttonDiv);
+    document.body.appendChild(this.dialog);
+    this.backdrop = document.createElement("div");
+    this.backdrop.className = "editable-svguitar-backdrop";
+    this.backdrop.style.cssText = `
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    `;
+    this.backdrop.addEventListener("click", () => this.closeDialog());
+    document.body.appendChild(this.backdrop);
+  }
+  /**
+   * Set chord configuration
+   * @param {import("svguitar").Chord} config
+   * @returns {EditableSVGuitarChord}
+   */
+  chord(config) {
+    this.chordConfig = {
+      fingers: config.fingers || [],
+      barres: config.barres || [],
+      title: config.title || "",
+      position: config.position
+    };
+    this.config.noPosition = config.position === void 0;
+    return this;
+  }
+  /**
+   * Configure SVGuitar options
+   * @param {any} config
+   * @returns {EditableSVGuitarChord}
+   */
+  configure(config) {
+    this.config = { ...this.config, ...config };
+    return this;
+  }
+  /**
+   * Calculate dynamic fret count based on chord content
+   * @returns {number} - Number of frets needed (minimum 3, max dot position + 1)
+   */
+  calculateDynamicFrets() {
+    const { fingers } = this.chordConfig;
+    let maxFret = 0;
+    for (const [, fret] of fingers) {
+      if (typeof fret === "string") continue;
+      if (fret > maxFret) {
+        maxFret = fret;
+      }
+    }
+    return Math.max(3, maxFret);
+  }
+  /**
+   * Draw the chord with interactive capabilities
+   * @param {number | undefined} [frets] - Force redraw even if already drawn
+   * @returns {EditableSVGuitarChord}
+   */
+  draw(frets) {
+    if (typeof document !== "undefined" && !this.controlsCreated) {
+      this.createControls();
+    }
+    this.config.frets = Math.max(frets != null ? frets : 0, this.calculateDynamicFrets());
+    const chordWithPlaceholders = this.addPlaceholderDots(this.chordConfig);
+    if (this.svgContainer) {
+      this.svgChord = new this.SVGuitarChordClass(this.svgContainer);
+      this.svgChord.chord(chordWithPlaceholders).configure(this.config).draw();
+      this.addEventListeners();
+    }
+    return this;
+  }
+  /**
+   * Redraw the chord
+   * @param {number | undefined} [frets] - Force redraw even if already drawn
+   */
+  redraw(frets) {
+    if (this.svgContainer) {
+      this.svgContainer.innerHTML = "";
+    }
+    this.draw(frets);
+  }
+  /**
+   * Add transparent placeholder dots for empty positions
+   * @param {import("svguitar").Chord} config
+   * @returns {import("svguitar").Chord}
+   */
+  addPlaceholderDots(config) {
+    const { fingers, title, position: position2 } = config;
+    const placeholders = [];
+    for (let string = 1; string <= 6; string++) {
+      for (let fret = 1; fret <= this.config.frets; fret++) {
+        const exists = fingers.some(([s2, f2]) => s2 === string && f2 === fret);
+        if (!exists) {
+          const placeholder = [string, fret, {
+            color: "transparent",
+            className: "placeholder-dot",
+            text: ""
+          }];
+          placeholders.push(placeholder);
+        }
+      }
+    }
+    for (let string = 1; string <= 6; string++) {
+      const openString = fingers.some(([s2, f2]) => s2 === string && f2 === 0);
+      if (!openString) {
+        const placeholder = [string, 0];
+        placeholders.push(placeholder);
+      }
+      if (!this.svgContainer) continue;
+      if (openString) {
+        this.svgContainer.classList.remove(`hide-open-string-${6 - string}`);
+      } else {
+        this.svgContainer.classList.add(`hide-open-string-${6 - string}`);
+      }
+    }
+    const result = {
+      fingers: [...fingers, ...placeholders],
+      barres: config.barres
+    };
+    if (title && title.trim()) {
+      result.title = title;
+    }
+    if (position2 !== void 0) {
+      result.position = position2;
+    }
+    return result;
+  }
+  /**
+   * Add event listeners to SVG elements
+   */
+  addEventListeners() {
+    const svg = this.svgContainer.querySelector("svg");
+    if (!svg) return;
+    svg.addEventListener("click", (event) => {
+      const target = (
+        /** @type {Element} */
+        event.target
+      );
+      if (target.classList.contains("open-string")) {
+        this.handleOpenStringClick(target);
+      } else if (target.tagName === "circle" && target.classList.contains("finger-circle")) {
+        this.handleDotClick(target);
+      } else if (target.tagName === "text" && target.previousElementSibling && target.previousElementSibling.tagName === "circle" && target.previousElementSibling.classList.contains("finger-circle")) {
+        this.handleDotClick(target.previousElementSibling);
+      }
+    });
+    const resizeOnHover = (size2) => {
+      this.redraw(size2);
+    };
+    let hoverResizeTimeout = null;
+    const overHandler = (event) => {
+      const target = (
+        /** @type {Element} */
+        event.target
+      );
+      if (target.tagName === "circle" && target.classList.contains("finger-circle")) {
+        const classes2 = Array.from(target.classList);
+        const fretClass = classes2.find((c2) => c2.startsWith("finger-fret-"));
+        if (fretClass) {
+          const fretNumber = fretClass.replace("finger-fret-", "");
+          clearTimeout(hoverResizeTimeout);
+          hoverResizeTimeout = setTimeout(resizeOnHover, 1e3, parseInt(fretNumber, 10) + 2);
+        }
+      }
+    };
+    svg.addEventListener("mouseover", overHandler);
+    svg.addEventListener("mouseout", (event) => {
+      const target = (
+        /** @type {Element} */
+        event.target
+      );
+      if (target.tagName === "circle" && target.classList.contains("finger-circle")) {
+        clearTimeout(hoverResizeTimeout);
+        hoverResizeTimeout = setTimeout(resizeOnHover, 1e3, void 0);
+      }
+    });
+  }
+  /**
+   * Handle click on a dot (finger circle)
+   * @param {Element} circleElement
+   */
+  handleDotClick(circleElement) {
+    if (this.isDialogOpen) return;
+    this.currentEditElement = circleElement;
+    const classes2 = Array.from(circleElement.classList);
+    const stringClass = classes2.find((c2) => c2.startsWith("finger-string-"));
+    const fretClass = classes2.find((c2) => c2.startsWith("finger-fret-"));
+    if (!stringClass || !fretClass) return;
+    const string = 6 - parseInt(stringClass.replace("finger-string-", ""), 10);
+    const fret = 1 + parseInt(fretClass.replace("finger-fret-", ""), 10);
+    const isPlaceholder = circleElement.getAttribute("fill") === "transparent";
+    if (isPlaceholder) {
+      this.addDot(string, fret);
+    } else {
+      this.editDot(string, fret);
+    }
+  }
+  /**
+   * Handle click on an open string element
+   * @param {Element} openStringElement
+   */
+  handleOpenStringClick(openStringElement) {
+    if (this.isDialogOpen) return;
+    const classes2 = Array.from(openStringElement.classList);
+    const stringClass = classes2.find((c2) => c2.startsWith("open-string-"));
+    if (!stringClass) return;
+    const stringIndex = parseInt(stringClass.replace("open-string-", ""), 10);
+    const string = 6 - stringIndex;
+    const existingFingerIndex = this.chordConfig.fingers.findIndex(([s2, f2]) => s2 === string && (f2 === 0 || f2 === "x"));
+    if (existingFingerIndex === -1) {
+      this.chordConfig.fingers.push([string, 0]);
+    } else {
+      const existingFinger = this.chordConfig.fingers[existingFingerIndex];
+      const existingFret = existingFinger[1];
+      if (existingFret === 0) {
+        this.chordConfig.fingers[existingFingerIndex] = [string, "x"];
+      } else if (existingFret === "x") {
+        this.chordConfig.fingers.splice(existingFingerIndex, 1);
+      }
+    }
+    this.redraw();
+    this.triggerChange();
+  }
+  /**
+   * Add a new dot at the specified position
+   * @param {number} string
+   * @param {number} fret
+   */
+  addDot(string, fret) {
+    this.chordConfig.fingers.push([string, fret, { text: "", color: DOT_COLORS.BLACK }]);
+    this.redraw();
+    this.triggerChange();
+  }
+  /**
+   * Edit an existing dot
+   * @param {number} string
+   * @param {number} fret
+   */
+  editDot(string, fret) {
+    var _a5, _b;
+    const finger = this.chordConfig.fingers.find(([s2, f2]) => s2 === string && f2 === fret);
+    if (!finger) return;
+    this.currentEditFinger = finger;
+    this.currentEditString = string;
+    this.currentEditFret = fret;
+    const currentColor = typeof finger[2] === "object" && ((_a5 = finger[2]) == null ? void 0 : _a5.color) || DOT_COLORS.BLACK;
+    const currentText = typeof finger[2] === "object" && ((_b = finger[2]) == null ? void 0 : _b.text) || "";
+    const normalizedColor = currentColor === DOT_COLORS.RED ? DOT_COLORS.RED : DOT_COLORS.BLACK;
+    this.redRadio.checked = normalizedColor === DOT_COLORS.RED;
+    this.blackRadio.checked = normalizedColor === DOT_COLORS.BLACK;
+    this.textInput.value = currentText;
+    this.updateTextSectionVisibility();
+    this.openDialog();
+  }
+  /**
+   * Open the edit dialog
+   */
+  openDialog() {
+    this.isDialogOpen = true;
+    this.dialog.style.display = "block";
+    this.backdrop.style.display = "block";
+    if (this.currentEditElement) {
+      this.positionDialog();
+    }
+    this.updateTextSectionVisibility();
+    if (this.blackRadio.checked && !this.textInput.disabled) {
+      this.textInput.focus();
+    }
+  }
+  /**
+   * Position dialog relative to the clicked element
+   */
+  positionDialog() {
+    if (!this.currentEditElement || !this.dialog) return;
+    const elementRect = this.currentEditElement.getBoundingClientRect();
+    const dialogRect = this.dialog.getBoundingClientRect();
+    const elementCenterX = elementRect.left + elementRect.width / 2;
+    const elementCenterY = elementRect.top + elementRect.height / 2;
+    let dialogX = elementCenterX + 20;
+    let dialogY = elementCenterY - dialogRect.height / 2;
+    const padding = 10;
+    const maxX = window.innerWidth - dialogRect.width - padding;
+    const maxY = window.innerHeight - dialogRect.height - padding;
+    let arrowSide = "left";
+    if (dialogX > maxX) {
+      dialogX = elementCenterX - dialogRect.width - 20;
+      arrowSide = "right";
+    }
+    if (dialogX < padding) dialogX = padding;
+    if (dialogY < padding) dialogY = padding;
+    if (dialogY > maxY) dialogY = maxY;
+    this.dialog.style.left = `${dialogX}px`;
+    this.dialog.style.top = `${dialogY}px`;
+    this.addArrowCSS(arrowSide, elementCenterY, dialogY, dialogRect.height);
+  }
+  /**
+   * Add CSS arrow using ::after pseudo-element
+   * @param {string} side - 'left' or 'right' indicating arrow direction
+   * @param {number} dotY - Y position of the clicked dot
+   * @param {number} dialogY - Y position of the dialog
+   * @param {number} dialogHeight - Height of the dialog
+   */
+  addArrowCSS(side, dotY, dialogY, dialogHeight) {
+    this.dialog.classList.remove("arrow-left", "arrow-right");
+    const arrowY = Math.max(20, Math.min(dialogHeight - 20, dotY - dialogY));
+    this.dialog.classList.add(`arrow-${side}`);
+    this.dialog.style.setProperty("--arrow-y", `${arrowY}px`);
+  }
+  /**
+   * Ensure arrow CSS rules are added to the document
+   */
+  addCustomCSS() {
+    if (typeof document === "undefined") return;
+    if (document.getElementById("editable-svguitar-arrow-styles")) return;
+    const style = document.createElement("style");
+    style.id = "editable-svguitar-custom-CSS";
+    style.textContent = `
+      .editable-svguitar-dialog.arrow-left::after {
+        content: '';
+        position: absolute;
+        left: -16px;
+        top: var(--arrow-y, 50px);
+        width: 0;
+        height: 0;
+        border: 8px solid transparent;
+        border-right-color: white;
+        transform: translateY(-50%);
+      }
+      
+      .editable-svguitar-dialog.arrow-right::after {
+        content: '';
+        position: absolute;
+        right: -16px;
+        top: var(--arrow-y, 50px);
+        width: 0;
+        height: 0;
+        border: 8px solid transparent;
+        border-left-color: white;
+        transform: translateY(-50%);
+      }
+
+      .editable-svguitar-svg .open-string{
+        fill: transparent !important;
+      }
+
+      .editable-svguitar-svg.hide-open-string-0 .open-string-0,
+      .editable-svguitar-svg.hide-open-string-1 .open-string-1,
+      .editable-svguitar-svg.hide-open-string-2 .open-string-2,
+      .editable-svguitar-svg.hide-open-string-3 .open-string-3,
+      .editable-svguitar-svg.hide-open-string-4 .open-string-4,
+      .editable-svguitar-svg.hide-open-string-5 .open-string-5 {
+        stroke: transparent !important;
+        fill: transparent !important;
+      }
+      
+      .editable-svguitar-settings-btn:hover {
+        background: #f0f0f0;
+      }
+      `;
+    document.head.appendChild(style);
+  }
+  /**
+   * Close the edit dialog
+   */
+  closeDialog() {
+    this.isDialogOpen = false;
+    this.dialog.style.display = "none";
+    this.backdrop.style.display = "none";
+    this.dialog.classList.remove("arrow-left", "arrow-right");
+    this.dialog.style.removeProperty("--arrow-y");
+    this.currentEditFinger = null;
+    this.currentEditElement = null;
+  }
+  /**
+   * Update text section visibility based on color selection
+   */
+  updateTextSectionVisibility() {
+    if (!this.textSection) return;
+    const isBlack = this.blackRadio && this.blackRadio.checked;
+    this.textSection.style.display = isBlack ? "block" : "none";
+    if (this.textInput) {
+      this.textInput.disabled = !isBlack;
+    }
+  }
+  /**
+   * Update dot text in real-time
+   */
+  updateDotText() {
+    if (!this.currentEditFinger) return;
+    if (!this.currentEditFinger[2]) {
+      this.currentEditFinger[2] = {};
+    }
+    const fingerOptions = typeof this.currentEditFinger[2] === "object" ? this.currentEditFinger[2] : {};
+    this.currentEditFinger[2] = { ...fingerOptions, text: this.textInput.value };
+    this.redraw();
+    this.triggerChange();
+  }
+  /**
+   * Update dot color in real-time
+   */
+  updateDotColor() {
+    if (!this.currentEditFinger) return;
+    if (!this.currentEditFinger[2]) {
+      this.currentEditFinger[2] = {};
+    }
+    const selectedColor = this.redRadio.checked ? DOT_COLORS.RED : DOT_COLORS.BLACK;
+    const fingerOptions = typeof this.currentEditFinger[2] === "object" ? this.currentEditFinger[2] : {};
+    this.currentEditFinger[2] = { ...fingerOptions, color: selectedColor };
+    if (selectedColor === DOT_COLORS.RED) {
+      this.currentEditFinger[2].text = "";
+      this.textInput.value = "";
+    }
+    this.updateTextSectionVisibility();
+    this.redraw();
+    this.triggerChange();
+  }
+  /**
+   * Save changes to the current dot
+   */
+  saveDot() {
+    if (!this.currentEditFinger) return;
+    if (!this.currentEditFinger[2]) {
+      this.currentEditFinger[2] = {};
+    }
+    const selectedColor = this.redRadio.checked ? DOT_COLORS.RED : DOT_COLORS.BLACK;
+    this.currentEditFinger[2] = { text: this.textInput.value, color: selectedColor };
+    this.closeDialog();
+    this.redraw();
+  }
+  /**
+   * Remove the current dot
+   */
+  removeDot() {
+    if (!this.currentEditFinger) return;
+    const index = this.chordConfig.fingers.findIndex(
+      ([s2, f2]) => s2 === this.currentEditString && f2 === this.currentEditFret
+    );
+    if (index >= 0) {
+      this.chordConfig.fingers.splice(index, 1);
+    }
+    this.closeDialog();
+    this.redraw();
+    this.triggerChange();
+  }
+  /**
+   * Open the settings dialog
+   */
+  openSettingsDialog() {
+    this.titleInput.value = this.chordConfig.title || "";
+    this.positionInput.value = this.chordConfig.position !== void 0 ? String(this.chordConfig.position) : "";
+    this.settingsDialog.style.display = "block";
+    this.settingsBackdrop.style.display = "block";
+    this.positionSettingsDialog();
+    this.titleInput.focus();
+  }
+  /**
+   * Position settings dialog near the settings button
+   */
+  positionSettingsDialog() {
+    if (!this.settingsButton || !this.settingsDialog) return;
+    const buttonRect = this.settingsButton.getBoundingClientRect();
+    const dialogRect = this.settingsDialog.getBoundingClientRect();
+    let dialogX = buttonRect.left;
+    let dialogY = buttonRect.bottom + 5;
+    const padding = 10;
+    const maxX = window.innerWidth - dialogRect.width - padding;
+    const maxY = window.innerHeight - dialogRect.height - padding;
+    if (dialogX > maxX) dialogX = maxX;
+    if (dialogX < padding) dialogX = padding;
+    if (dialogY > maxY) dialogY = buttonRect.top - dialogRect.height - 5;
+    if (dialogY < padding) dialogY = padding;
+    this.settingsDialog.style.left = `${dialogX}px`;
+    this.settingsDialog.style.top = `${dialogY}px`;
+  }
+  /**
+   * Close the settings dialog
+   */
+  closeSettingsDialog() {
+    if (this.settingsDialog) {
+      this.settingsDialog.style.display = "none";
+    }
+    if (this.settingsBackdrop) {
+      this.settingsBackdrop.style.display = "none";
+    }
+  }
+  /**
+   * Save settings from the dialog
+   */
+  saveSettings() {
+    const title = this.titleInput.value.trim();
+    const positionStr = this.positionInput.value.trim();
+    this.chordConfig.title = title;
+    if (positionStr === "") {
+      this.chordConfig.position = void 0;
+    } else {
+      const position2 = parseInt(positionStr, 10);
+      if (isNaN(position2) || position2 < 0 || position2 > 30) {
+        alert("Position must be a number between 0 and 30");
+        return;
+      }
+      this.chordConfig.position = position2;
+    }
+    this.config.noPosition = this.chordConfig.position === void 0;
+    this.closeSettingsDialog();
+    this.redraw();
+    this.triggerChange();
+  }
+  /**
+   * Get current chord configuration
+   * @returns {import("svguitar").Chord}
+   */
+  getChord() {
+    return { ...this.chordConfig };
+  }
+  /**
+   * Get string representation of the chord
+   * @param {object} [options]
+   * @param {boolean} [options.useUnicode=false] - Whether to use Unicode characters for string/fret markers
+   * @returns {string}
+   */
+  toString(options) {
+    return fingeringToString(this.chordConfig, options);
+  }
+  /**
+   * Register a callback for when the chord changes
+   * @param {(this: EditableSVGuitarChord) => void} callback - Called with updated fingers array
+   * @returns {EditableSVGuitarChord}
+   */
+  onChange(callback) {
+    this.changeCallback = callback;
+    return this;
+  }
+  /**
+   * Trigger the change callback if registered
+   */
+  triggerChange() {
+    if (this.changeCallback && typeof this.changeCallback === "function") {
+      this.changeCallback(this);
+    }
+  }
+  /**
+   * Clean up resources
+   */
+  destroy() {
+    if (this.dialog && this.dialog.parentNode) {
+      this.dialog.parentNode.removeChild(this.dialog);
+    }
+    if (this.backdrop && this.backdrop.parentNode) {
+      this.backdrop.parentNode.removeChild(this.backdrop);
+    }
+  }
+};
 
 // demoEditableSVGuitar/app.js
 var editor = (
@@ -7920,12 +8107,25 @@ var output = (
   /** @type {HTMLElement} */
   document.getElementById("output")
 );
-if (!editor || !output) {
+var outputAscii = (
+  /** @type {HTMLElement} */
+  document.getElementById("output-ascii")
+);
+var outputUnicode = (
+  /** @type {HTMLElement} */
+  document.getElementById("output-unicode")
+);
+if (!editor || !outputAscii || !outputUnicode) {
   throw new Error("Required DOM elements not found");
 }
-var editable = new EditableSVGuitarChord(editor, SVGuitarChord).chord({ fingers: [], barres: [] }).configure({ frets: 5, noPosition: true }).draw();
+var editable = new EditableSVGuitarChord(editor).chord({ fingers: [], barres: [] }).configure({ frets: 5, noPosition: true }).draw();
+editable.onChange(() => {
+  updateJSON();
+});
 function updateJSON() {
   output.textContent = JSON.stringify(editable.getChord(), null, 2);
+  outputAscii.textContent = editable.toString({ useUnicode: false });
+  outputUnicode.textContent = editable.toString({ useUnicode: true });
 }
 function clone(obj) {
   return typeof structuredClone === "function" ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
@@ -7963,9 +8163,7 @@ var _a3;
   updateJSON();
 });
 var _a4;
-(_a4 = document.getElementById("refresh-json")) == null ? void 0 : _a4.addEventListener("click", updateJSON);
-var _a5;
-(_a5 = document.getElementById("export-json")) == null ? void 0 : _a5.addEventListener("click", () => {
+(_a4 = document.getElementById("export-json")) == null ? void 0 : _a4.addEventListener("click", () => {
   const blob = new Blob([output.textContent], { type: "application/json" });
   const a2 = document.createElement("a");
   a2.href = URL.createObjectURL(blob);

@@ -427,9 +427,9 @@ describe('EditableSVGuitarChord (Title and Position)', () => {
     let callbackFired = false;
     let receivedFingers = null;
     
-    editableChord.onChange((fingers) => {
+    editableChord.onChange((chord) => {
       callbackFired = true;
-      receivedFingers = fingers;
+      receivedFingers = chord.chordConfig.fingers;
     });
     
     editableChord.titleInput = { value: 'Test' };
