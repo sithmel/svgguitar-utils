@@ -1,6 +1,5 @@
 //@ts-check
 import { EditableSVGuitarChord } from '../lib/editableSVGuitar.js';
-import { SVGuitarChord } from 'svguitar';
 
 /** @type {HTMLElement} */
 const editor = /** @type {HTMLElement} */(document.getElementById('editor'));
@@ -11,7 +10,7 @@ if (!editor || !output) {
   throw new Error('Required DOM elements not found');
 }
 
-const editable = new EditableSVGuitarChord(editor, SVGuitarChord)
+const editable = new EditableSVGuitarChord(editor)
   .chord({ fingers: [], barres: [] })
   .configure({ frets: 5, noPosition: true })
   .draw();

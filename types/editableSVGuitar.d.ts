@@ -17,11 +17,11 @@ export class EditableSVGuitarChord {
      * @param {HTMLElement} container
      * @param {any} SVGuitarChordClass
      */
-    constructor(container: HTMLElement, SVGuitarChordClass: any);
+    constructor(container: HTMLElement, SVGuitarChordClass?: any);
     container: HTMLElement;
     SVGuitarChordClass: any;
-    /** @type {ChordConfig} */
-    chordConfig: ChordConfig;
+    /** @type {import("svguitar").Chord} */
+    chordConfig: import("svguitar").Chord;
     /** @type {any} */
     config: any;
     svgChord: any;
@@ -34,7 +34,17 @@ export class EditableSVGuitarChord {
      * Create controls and containers
      */
     createControls(): void;
+    wrapper: HTMLDivElement;
+    settingsButton: HTMLButtonElement;
     svgContainer: HTMLDivElement;
+    /**
+     * Create the settings dialog for title and position
+     */
+    createSettingsDialog(): void;
+    settingsDialog: HTMLDivElement;
+    titleInput: HTMLInputElement;
+    positionInput: HTMLInputElement;
+    settingsBackdrop: HTMLDivElement;
     /**
      * Create the edit dialog
      */
@@ -47,10 +57,10 @@ export class EditableSVGuitarChord {
     backdrop: HTMLDivElement;
     /**
      * Set chord configuration
-     * @param {ChordConfig} config
+     * @param {import("svguitar").Chord} config
      * @returns {EditableSVGuitarChord}
      */
-    chord(config: ChordConfig): EditableSVGuitarChord;
+    chord(config: import("svguitar").Chord): EditableSVGuitarChord;
     /**
      * Configure SVGuitar options
      * @param {any} config
@@ -75,10 +85,10 @@ export class EditableSVGuitarChord {
     redraw(frets?: number | undefined): void;
     /**
      * Add transparent placeholder dots for empty positions
-     * @param {ChordConfig} config
-     * @returns {ChordConfig}
+     * @param {import("svguitar").Chord} config
+     * @returns {import("svguitar").Chord}
      */
-    addPlaceholderDots(config: ChordConfig): ChordConfig;
+    addPlaceholderDots(config: import("svguitar").Chord): import("svguitar").Chord;
     /**
      * Add event listeners to SVG elements
      */
@@ -105,7 +115,7 @@ export class EditableSVGuitarChord {
      * @param {number} fret
      */
     editDot(string: number, fret: number): void;
-    currentEditFinger: FingerPosition;
+    currentEditFinger: import("svguitar").Finger;
     currentEditString: number;
     currentEditFret: number;
     /**
@@ -153,10 +163,35 @@ export class EditableSVGuitarChord {
      */
     removeDot(): void;
     /**
-     * Get current chord configuration
-     * @returns {ChordConfig}
+     * Open the settings dialog
      */
-    getChord(): ChordConfig;
+    openSettingsDialog(): void;
+    /**
+     * Position settings dialog near the settings button
+     */
+    positionSettingsDialog(): void;
+    /**
+     * Close the settings dialog
+     */
+    closeSettingsDialog(): void;
+    /**
+     * Save settings from the dialog
+     */
+    saveSettings(): void;
+    /**
+     * Get current chord configuration
+     * @returns {import("svguitar").Chord}
+     */
+    getChord(): import("svguitar").Chord;
+    /**
+     * Get string representation of the chord
+     * @param {object} [options]
+     * @param {boolean} [options.useUnicode=false] - Whether to use Unicode characters for string/fret markers
+     * @returns {string}
+     */
+    toString(options?: {
+        useUnicode?: boolean;
+    }): string;
     /**
      * Register a callback for when the chord changes
      * @param {Function} callback - Called with updated fingers array
@@ -172,19 +207,3 @@ export class EditableSVGuitarChord {
      */
     destroy(): void;
 }
-export type SVGuitarChord = any;
-export type FingerPosition = [number, number | "x", {
-    text?: string;
-    color?: string;
-    className?: string;
-}?];
-export type ChordConfig = {
-    fingers: FingerPosition[];
-    barres: any[];
-    frets?: number;
-};
-export type FingerOptions = {
-    text?: string;
-    color?: string;
-    className?: string;
-};

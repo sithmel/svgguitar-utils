@@ -40,7 +40,7 @@ describe('EditableSVGuitarChord (Core Functionality)', () => {
     assert.ok(editableChord);
     assert.equal(editableChord.container, mockContainer);
     assert.equal(editableChord.SVGuitarChordClass, MockSVGuitarChord);
-    assert.deepEqual(editableChord.chordConfig, { fingers: [], barres: [] });
+    assert.deepEqual(editableChord.chordConfig, { fingers: [], barres: [], title: undefined, position: undefined });
     assert.equal(editableChord.config.frets, 5);
     assert.equal(editableChord.isDialogOpen, false);
   });
@@ -209,5 +209,236 @@ describe('DOT_COLORS', () => {
   test('DOT_COLORS has expected red and black values', () => {
     assert.equal(DOT_COLORS.RED, '#e74c3c', 'RED should be correct hex value');
     assert.equal(DOT_COLORS.BLACK, '#000000', 'BLACK should be correct hex value');
+  });
+});
+describe('EditableSVGuitarChord (Title and Position)', () => {
+  test('sets title and position via chord() method', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    const testChord = {
+      fingers: [[1, 0], [2, 2]],
+      barres: [],
+      title: 'A minor',
+      position: 5
+    };
+    
+    editableChord.chord(testChord);
+    const result = editableChord.getChord();
+    
+    assert.equal(result.title, 'A minor');
+    assert.equal(result.position, 5);
+    assert.deepEqual(result.fingers, testChord.fingers);
+    assert.deepEqual(result.barres, testChord.barres);
+  });
+
+  test('getChord() returns title and position', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    editableChord.chord({
+      fingers: [[3, 2]],
+      barres: [],
+      title: 'G7',
+      position: 3
+    });
+    
+    const result = editableChord.getChord();
+    
+    assert.equal(result.title, 'G7');
+    assert.equal(result.position, 3);
+  });
+
+  test('handles empty title and undefined position', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    editableChord.chord({
+      fingers: [[1, 1]],
+      barres: []
+    });
+    
+    const result = editableChord.getChord();
+    
+    assert.equal(result.title, '');
+    assert.equal(result.position, undefined);
+  });
+
+  test('omits empty title from SVGuitar config', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    editableChord.chord({
+      fingers: [[1, 1]],
+      barres: [],
+      title: '',
+      position: undefined
+    });
+    
+    const chordWithPlaceholders = editableChord.addPlaceholderDots(editableChord.chordConfig);
+    
+    assert.ok(!('title' in chordWithPlaceholders) || chordWithPlaceholders.title === undefined);
+    assert.ok(!('position' in chordWithPlaceholders) || chordWithPlaceholders.position === undefined);
+  });
+
+  test('includes title and position in SVGuitar config when set', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    editableChord.chord({
+      fingers: [[1, 1]],
+      barres: [],
+      title: 'C Major',
+      position: 8
+    });
+    
+    const chordWithPlaceholders = editableChord.addPlaceholderDots(editableChord.chordConfig);
+    
+    assert.equal(chordWithPlaceholders.title, 'C Major');
+    assert.equal(chordWithPlaceholders.position, 8);
+  });
+
+  test('position = 0 is valid and included', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    editableChord.chord({
+      fingers: [[1, 1]],
+      barres: [],
+      title: 'Open E',
+      position: 0
+    });
+    
+    const result = editableChord.getChord();
+    const chordWithPlaceholders = editableChord.addPlaceholderDots(editableChord.chordConfig);
+    
+    assert.equal(result.position, 0);
+    assert.equal(chordWithPlaceholders.position, 0);
+  });
+
+  test('noPosition config toggles when position is set', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    // Initially noPosition should be true
+    assert.equal(editableChord.config.noPosition, true);
+    
+    // Set position via chord()
+    editableChord.chord({
+      fingers: [],
+      barres: [],
+      position: 5
+    });
+    
+    // noPosition should now be false
+    assert.equal(editableChord.config.noPosition, false);
+  });
+
+  test('noPosition config remains true when position is undefined', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    editableChord.chord({
+      fingers: [],
+      barres: [],
+      position: undefined
+    });
+    
+    assert.equal(editableChord.config.noPosition, true);
+  });
+
+  test('saveSettings updates title and position', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    // Mock the dialog inputs
+    editableChord.titleInput = { value: '  D Major  ' };
+    editableChord.positionInput = { value: '7' };
+    
+    editableChord.chord({ fingers: [], barres: [] });
+    editableChord.saveSettings();
+    
+    const result = editableChord.getChord();
+    
+    assert.equal(result.title, 'D Major');
+    assert.equal(result.position, 7);
+    assert.equal(editableChord.config.noPosition, false);
+  });
+
+  test('saveSettings handles empty values', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    editableChord.titleInput = { value: '' };
+    editableChord.positionInput = { value: '' };
+    
+    editableChord.chord({ fingers: [], barres: [], title: 'Old', position: 5 });
+    editableChord.saveSettings();
+    
+    const result = editableChord.getChord();
+    
+    assert.equal(result.title, '');
+    assert.equal(result.position, undefined);
+    assert.equal(editableChord.config.noPosition, true);
+  });
+
+  test('saveSettings validates position range (too low)', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    // Mock alert
+    let alertCalled = false;
+    global.alert = () => { alertCalled = true; };
+    
+    editableChord.titleInput = { value: 'Test' };
+    editableChord.positionInput = { value: '-1' };
+    
+    editableChord.chord({ fingers: [], barres: [] });
+    editableChord.saveSettings();
+    
+    assert.ok(alertCalled, 'Should show alert for invalid position');
+    
+    // Clean up
+    delete global.alert;
+  });
+
+  test('saveSettings validates position range (too high)', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    let alertCalled = false;
+    global.alert = () => { alertCalled = true; };
+    
+    editableChord.titleInput = { value: 'Test' };
+    editableChord.positionInput = { value: '31' };
+    
+    editableChord.chord({ fingers: [], barres: [] });
+    editableChord.saveSettings();
+    
+    assert.ok(alertCalled, 'Should show alert for position > 30');
+    
+    delete global.alert;
+  });
+
+  test('onChange callback receives updated fingers after title/position change', () => {
+    const mockContainer = { appendChild: () => {} };
+    const editableChord = new EditableSVGuitarChord(mockContainer, MockSVGuitarChord);
+    
+    let callbackFired = false;
+    let receivedFingers = null;
+    
+    editableChord.onChange((fingers) => {
+      callbackFired = true;
+      receivedFingers = fingers;
+    });
+    
+    editableChord.titleInput = { value: 'Test' };
+    editableChord.positionInput = { value: '5' };
+    
+    editableChord.chord({ fingers: [[1, 2]], barres: [] });
+    editableChord.saveSettings();
+    
+    assert.ok(callbackFired, 'onChange callback should be called');
+    assert.deepEqual(receivedFingers, [[1, 2]], 'Should pass fingers array to callback');
   });
 });

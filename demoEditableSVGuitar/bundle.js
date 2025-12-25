@@ -11,7 +11,7 @@ var EditableSVGuitarChord = class {
   constructor(container, SVGuitarChordClass) {
     this.container = container;
     this.SVGuitarChordClass = SVGuitarChordClass;
-    this.chordConfig = { fingers: [], barres: [] };
+    this.chordConfig = { fingers: [], barres: [], title: void 0, position: void 0 };
     this.config = { frets: 5, noPosition: true };
     this.svgChord = null;
     this.isDialogOpen = false;
@@ -28,10 +28,110 @@ var EditableSVGuitarChord = class {
    */
   createControls() {
     this.controlsCreated = true;
+    this.wrapper = document.createElement("div");
+    this.wrapper.className = "editable-svguitar-wrapper";
+    this.wrapper.style.cssText = "position: relative;";
+    this.container.appendChild(this.wrapper);
+    this.settingsButton = document.createElement("button");
+    this.settingsButton.className = "editable-svguitar-settings-btn";
+    this.settingsButton.innerHTML = "\u2699\uFE0F";
+    this.settingsButton.title = "Edit title and position";
+    this.settingsButton.style.cssText = `
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      background: white;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 14px;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    `;
+    this.settingsButton.addEventListener("click", () => this.openSettingsDialog());
+    this.wrapper.appendChild(this.settingsButton);
     this.svgContainer = document.createElement("div");
     this.svgContainer.className = "editable-svguitar-svg";
-    this.container.appendChild(this.svgContainer);
+    this.wrapper.appendChild(this.svgContainer);
     this.createDialog();
+    this.createSettingsDialog();
+  }
+  /**
+   * Create the settings dialog for title and position
+   */
+  createSettingsDialog() {
+    this.settingsDialog = document.createElement("div");
+    this.settingsDialog.className = "editable-svguitar-settings-dialog";
+    this.settingsDialog.style.cssText = `
+      display: none;
+      position: absolute;
+      background: white;
+      border: 2px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      z-index: 1000;
+      min-width: 280px;
+    `;
+    const title = document.createElement("h3");
+    title.textContent = "Chord Settings";
+    title.style.cssText = "margin: 0 0 15px 0; font-size: 16px;";
+    const titleSection = document.createElement("div");
+    titleSection.style.cssText = "margin-bottom: 15px;";
+    const titleLabel = document.createElement("label");
+    titleLabel.textContent = "Title (optional): ";
+    titleLabel.style.cssText = "display: block; margin-bottom: 5px; font-weight: bold;";
+    this.titleInput = document.createElement("input");
+    this.titleInput.type = "text";
+    this.titleInput.placeholder = "e.g., A min, G7";
+    this.titleInput.style.cssText = "width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;";
+    titleLabel.appendChild(this.titleInput);
+    titleSection.appendChild(titleLabel);
+    const positionSection = document.createElement("div");
+    positionSection.style.cssText = "margin-bottom: 15px;";
+    const positionLabel = document.createElement("label");
+    positionLabel.textContent = "Position (optional): ";
+    positionLabel.style.cssText = "display: block; margin-bottom: 5px; font-weight: bold;";
+    this.positionInput = document.createElement("input");
+    this.positionInput.type = "number";
+    this.positionInput.min = "0";
+    this.positionInput.max = "30";
+    this.positionInput.placeholder = "0-30";
+    this.positionInput.style.cssText = "width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;";
+    positionLabel.appendChild(this.positionInput);
+    positionSection.appendChild(positionLabel);
+    const buttonDiv = document.createElement("div");
+    buttonDiv.style.cssText = "display: flex; gap: 10px; justify-content: flex-end;";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.style.cssText = "padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;";
+    cancelBtn.addEventListener("click", () => this.closeSettingsDialog());
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "Save";
+    saveBtn.style.cssText = "padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;";
+    saveBtn.addEventListener("click", () => this.saveSettings());
+    buttonDiv.appendChild(cancelBtn);
+    buttonDiv.appendChild(saveBtn);
+    this.settingsDialog.appendChild(title);
+    this.settingsDialog.appendChild(titleSection);
+    this.settingsDialog.appendChild(positionSection);
+    this.settingsDialog.appendChild(buttonDiv);
+    document.body.appendChild(this.settingsDialog);
+    this.settingsBackdrop = document.createElement("div");
+    this.settingsBackdrop.className = "editable-svguitar-settings-backdrop";
+    this.settingsBackdrop.style.cssText = `
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    `;
+    this.settingsBackdrop.addEventListener("click", () => this.closeSettingsDialog());
+    document.body.appendChild(this.settingsBackdrop);
   }
   /**
    * Create the edit dialog
@@ -136,11 +236,17 @@ var EditableSVGuitarChord = class {
   }
   /**
    * Set chord configuration
-   * @param {ChordConfig} config
+   * @param {import("svguitar").Chord} config
    * @returns {EditableSVGuitarChord}
    */
   chord(config) {
-    this.chordConfig = { ...config };
+    this.chordConfig = {
+      fingers: config.fingers || [],
+      barres: config.barres || [],
+      title: config.title || "",
+      position: config.position
+    };
+    this.config.noPosition = config.position === void 0;
     return this;
   }
   /**
@@ -197,11 +303,11 @@ var EditableSVGuitarChord = class {
   }
   /**
    * Add transparent placeholder dots for empty positions
-   * @param {ChordConfig} config
-   * @returns {ChordConfig}
+   * @param {import("svguitar").Chord} config
+   * @returns {import("svguitar").Chord}
    */
   addPlaceholderDots(config) {
-    const { fingers } = config;
+    const { fingers, title, position: position2 } = config;
     const placeholders = [];
     for (let string = 1; string <= 6; string++) {
       for (let fret = 1; fret <= this.config.frets; fret++) {
@@ -229,10 +335,17 @@ var EditableSVGuitarChord = class {
         this.svgContainer.classList.add(`hide-open-string-${6 - string}`);
       }
     }
-    return {
-      ...config,
-      fingers: [...fingers, ...placeholders]
+    const result = {
+      fingers: [...fingers, ...placeholders],
+      barres: config.barres
     };
+    if (title && title.trim()) {
+      result.title = title;
+    }
+    if (position2 !== void 0) {
+      result.position = position2;
+    }
+    return result;
   }
   /**
    * Add event listeners to SVG elements
@@ -352,8 +465,8 @@ var EditableSVGuitarChord = class {
     this.currentEditFinger = finger;
     this.currentEditString = string;
     this.currentEditFret = fret;
-    const currentColor = ((_a6 = finger[2]) == null ? void 0 : _a6.color) || DOT_COLORS.BLACK;
-    const currentText = ((_b = finger[2]) == null ? void 0 : _b.text) || "";
+    const currentColor = typeof finger[2] === "object" && ((_a6 = finger[2]) == null ? void 0 : _a6.color) || DOT_COLORS.BLACK;
+    const currentText = typeof finger[2] === "object" && ((_b = finger[2]) == null ? void 0 : _b.text) || "";
     const normalizedColor = currentColor === DOT_COLORS.RED ? DOT_COLORS.RED : DOT_COLORS.BLACK;
     this.redRadio.checked = normalizedColor === DOT_COLORS.RED;
     this.blackRadio.checked = normalizedColor === DOT_COLORS.BLACK;
@@ -461,6 +574,10 @@ var EditableSVGuitarChord = class {
         stroke: transparent !important;
         fill: transparent !important;
       }
+      
+      .editable-svguitar-settings-btn:hover {
+        background: #f0f0f0;
+      }
       `;
     document.head.appendChild(style);
   }
@@ -495,7 +612,8 @@ var EditableSVGuitarChord = class {
     if (!this.currentEditFinger[2]) {
       this.currentEditFinger[2] = {};
     }
-    this.currentEditFinger[2].text = this.textInput.value;
+    const fingerOptions = typeof this.currentEditFinger[2] === "object" ? this.currentEditFinger[2] : {};
+    this.currentEditFinger[2] = { ...fingerOptions, text: this.textInput.value };
     this.redraw();
     this.triggerChange();
   }
@@ -508,7 +626,8 @@ var EditableSVGuitarChord = class {
       this.currentEditFinger[2] = {};
     }
     const selectedColor = this.redRadio.checked ? DOT_COLORS.RED : DOT_COLORS.BLACK;
-    this.currentEditFinger[2].color = selectedColor;
+    const fingerOptions = typeof this.currentEditFinger[2] === "object" ? this.currentEditFinger[2] : {};
+    this.currentEditFinger[2] = { ...fingerOptions, color: selectedColor };
     if (selectedColor === DOT_COLORS.RED) {
       this.currentEditFinger[2].text = "";
       this.textInput.value = "";
@@ -525,9 +644,8 @@ var EditableSVGuitarChord = class {
     if (!this.currentEditFinger[2]) {
       this.currentEditFinger[2] = {};
     }
-    this.currentEditFinger[2].text = this.textInput.value;
     const selectedColor = this.redRadio.checked ? DOT_COLORS.RED : DOT_COLORS.BLACK;
-    this.currentEditFinger[2].color = selectedColor;
+    this.currentEditFinger[2] = { text: this.textInput.value, color: selectedColor };
     this.closeDialog();
     this.redraw();
   }
@@ -547,8 +665,71 @@ var EditableSVGuitarChord = class {
     this.triggerChange();
   }
   /**
+   * Open the settings dialog
+   */
+  openSettingsDialog() {
+    this.titleInput.value = this.chordConfig.title || "";
+    this.positionInput.value = this.chordConfig.position !== void 0 ? String(this.chordConfig.position) : "";
+    this.settingsDialog.style.display = "block";
+    this.settingsBackdrop.style.display = "block";
+    this.positionSettingsDialog();
+    this.titleInput.focus();
+  }
+  /**
+   * Position settings dialog near the settings button
+   */
+  positionSettingsDialog() {
+    if (!this.settingsButton || !this.settingsDialog) return;
+    const buttonRect = this.settingsButton.getBoundingClientRect();
+    const dialogRect = this.settingsDialog.getBoundingClientRect();
+    let dialogX = buttonRect.left;
+    let dialogY = buttonRect.bottom + 5;
+    const padding = 10;
+    const maxX = window.innerWidth - dialogRect.width - padding;
+    const maxY = window.innerHeight - dialogRect.height - padding;
+    if (dialogX > maxX) dialogX = maxX;
+    if (dialogX < padding) dialogX = padding;
+    if (dialogY > maxY) dialogY = buttonRect.top - dialogRect.height - 5;
+    if (dialogY < padding) dialogY = padding;
+    this.settingsDialog.style.left = `${dialogX}px`;
+    this.settingsDialog.style.top = `${dialogY}px`;
+  }
+  /**
+   * Close the settings dialog
+   */
+  closeSettingsDialog() {
+    if (this.settingsDialog) {
+      this.settingsDialog.style.display = "none";
+    }
+    if (this.settingsBackdrop) {
+      this.settingsBackdrop.style.display = "none";
+    }
+  }
+  /**
+   * Save settings from the dialog
+   */
+  saveSettings() {
+    const title = this.titleInput.value.trim();
+    const positionStr = this.positionInput.value.trim();
+    this.chordConfig.title = title;
+    if (positionStr === "") {
+      this.chordConfig.position = void 0;
+    } else {
+      const position2 = parseInt(positionStr, 10);
+      if (isNaN(position2) || position2 < 0 || position2 > 30) {
+        alert("Position must be a number between 0 and 30");
+        return;
+      }
+      this.chordConfig.position = position2;
+    }
+    this.config.noPosition = this.chordConfig.position === void 0;
+    this.closeSettingsDialog();
+    this.redraw();
+    this.triggerChange();
+  }
+  /**
    * Get current chord configuration
-   * @returns {ChordConfig}
+   * @returns {import("svguitar").Chord}
    */
   getChord() {
     return { ...this.chordConfig };
