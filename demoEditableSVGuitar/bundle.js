@@ -8253,7 +8253,7 @@ function stringToFingering(fingeringStr, options = {}) {
     }
   }
   if (firstGridRowIdx === -1) {
-    return { fingers: [], barres: [] };
+    return null;
   }
   let startCol = 0;
   let numStrings = 6;
@@ -8500,13 +8500,15 @@ var _a7;
     rectangles.forEach((rectangle, index) => {
       try {
         const chordConfig = stringToFingering(rectangle);
+        if (chordConfig == null) {
+          return;
+        }
         const container = document.createElement("div");
         container.className = "chord-container";
         chordGrid.appendChild(container);
         const chart = new SVGuitarChord(container);
         const frets = Math.max(...chordConfig.fingers.map((f2) => typeof f2[1] === "number" ? f2[1] : 0), 3);
         const noPosition = chordConfig.position === 0 || chordConfig.position === void 0;
-        console.log(chordConfig, noPosition, frets);
         chart.chord(chordConfig).configure({ frets, noPosition }).draw();
       } catch (err) {
         console.error(`Error rendering chord ${index + 1}:`, err);

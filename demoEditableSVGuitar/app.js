@@ -110,6 +110,9 @@ document.getElementById('convert-btn')?.addEventListener('click', () => {
     rectangles.forEach((rectangle, index) => {
       try {
         const chordConfig = stringToFingering(rectangle);
+        if (chordConfig == null) {
+          return;
+        }
         
         // Create container for this chord
         const container = document.createElement('div');
@@ -120,7 +123,6 @@ document.getElementById('convert-btn')?.addEventListener('click', () => {
         const chart = new SVGuitarChord(container);
         const frets = Math.max(...chordConfig.fingers.map(f => (typeof f[1] === 'number' ? f[1] : 0)), 3);
         const noPosition = chordConfig.position === 0 || (chordConfig.position === undefined);
-        console.log(chordConfig, noPosition, frets);
         chart
           .chord(chordConfig)
           .configure({ frets, noPosition })

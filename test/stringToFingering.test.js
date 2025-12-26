@@ -23,11 +23,14 @@ const isFingerEqual = (fingerA, fingerB) => {
 };
 
 /**
- * @param {import("svguitar").Chord} result
+ * @param {import("svguitar").Chord | null} result
  * @param {Array<import("svguitar").Finger>} fingers
  * @returns {boolean}
  */
 function fingersContains(result, fingers) {
+  if (!result) {
+    return false;
+  }
   if (fingers.length !== result.fingers.length) {
     return false;
   }
@@ -84,12 +87,12 @@ describe("stringToFingering", () => {
         "Fingering does not match expected A minor chord"
       );
       assert.equal(
-        result.title,
+        result?.title,
         "A min",
         "Title does not match expected A min"
       );
       assert.equal(
-        result.position,
+        result?.position,
         undefined,
         "Position does not match expected undefined"
       );
@@ -138,13 +141,13 @@ describe("stringToFingering", () => {
         true, 
         "Fingering does not match expected D chord"
       );
-      assert.equal(result.title, "D", "Title does not match expected D");
+      assert.equal(result?.title, "D", "Title does not match expected D");
       assert.equal(
-        result.position,
+        result?.position,
         undefined,
         "Position does not match expected undefined"
       );
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
     test("parses G7 chord with starting fret number", () => {
@@ -196,9 +199,9 @@ describe("stringToFingering", () => {
         true, 
         "Fingering does not match expected G7 chord"
       );
-      assert.equal(result.title, "G 7", "Title does not match expected G 7");
-      assert.equal(result.position, 5, "Position does not match expected 5");
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.equal(result?.title, "G 7", "Title does not match expected G 7");
+      assert.equal(result?.position, 5, "Position does not match expected 5");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
     test("parses G7 chord with 2 digits starting fret number", () => {
@@ -250,9 +253,9 @@ describe("stringToFingering", () => {
         true, 
         "Fingering does not match expected G7 chord"
       );
-      assert.equal(result.title, "G 7", "Title does not match expected G 7");
-      assert.equal(result.position, 15, "Position does not match expected 15");
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.equal(result?.title, "G 7", "Title does not match expected G 7");
+      assert.equal(result?.position, 15, "Position does not match expected 15");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
     test("parses E dom 7 chord with finger numbers", () => {
@@ -304,16 +307,16 @@ describe("stringToFingering", () => {
         "Fingering does not match expected E dom 7 chord with finger numbers"
       );
       assert.equal(
-        result.title,
+        result?.title,
         "E dom 7",
         "Title does not match expected E dom 7"
       );
       assert.equal(
-        result.position,
+        result?.position,
         undefined,
         "Position does not match expected undefined"
       );
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
   });
 
@@ -364,17 +367,16 @@ describe("stringToFingering", () => {
         "Fingering does not match expected A minor chord"
       );
       assert.equal(
-        result.title,
+        result?.title,
         "A min",
         "Title does not match expected A min"
       );
       assert.equal(
-        result.position,
+        result?.position,
         undefined,
         "Position does not match expected undefined"
       );
-      assert.deepEqual(result.barres, [], "Barres should be empty");    });
-
+      assert.deepEqual(result?.barres, [], "Barres should be empty");    });
     test("parses D chord (Unicode format)", () => {
       const fingeringStr = `  D
   × ○ ○
@@ -421,13 +423,13 @@ describe("stringToFingering", () => {
         true, 
         "Fingering does not match expected D chord"
       );
-      assert.equal(result.title, "D", "Title does not match expected D");
+      assert.equal(result?.title, "D", "Title does not match expected D");
       assert.equal(
-        result.position,
+        result?.position,
         undefined,
         "Position does not match expected undefined"
       );
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
     test("parses G7 chord with starting fret (Unicode format)", () => {
@@ -483,9 +485,9 @@ describe("stringToFingering", () => {
         true, 
         "Fingering does not match expected G7 chord"
       );
-      assert.equal(result.title, "G 7", "Title does not match expected G 7");
-      assert.equal(result.position, 5, "Position does not match expected 5");
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.equal(result?.title, "G 7", "Title does not match expected G 7");
+      assert.equal(result?.position, 5, "Position does not match expected 5");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
     test("parses G7 chord with 2 digits starting fret (Unicode format)", () => {
@@ -541,9 +543,9 @@ describe("stringToFingering", () => {
         true, 
         "Fingering does not match expected G7 chord"
       );
-      assert.equal(result.title, "G 7", "Title does not match expected G 7");
-      assert.equal(result.position, 15, "Position does not match expected 15");
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.equal(result?.title, "G 7", "Title does not match expected G 7");
+      assert.equal(result?.position, 15, "Position does not match expected 15");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
     test("parses G7 chord with 1 starting fret (Unicode format)", () => {
@@ -599,9 +601,9 @@ describe("stringToFingering", () => {
         true, 
         "Fingering does not match expected G7 chord"
       );
-      assert.equal(result.title, "G 7", "Title does not match expected G 7");
-      assert.equal(result.position, 1, "Position does not match expected 1");
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.equal(result?.title, "G 7", "Title does not match expected G 7");
+      assert.equal(result?.position, 1, "Position does not match expected 1");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
     test("parses G7 chord with 1 starting fret (Unicode format) - alternate version", () => {
@@ -657,9 +659,9 @@ describe("stringToFingering", () => {
         true, 
         "Fingering does not match expected G7 chord"
       );
-      assert.equal(result.title, "G 7", "Title does not match expected G 7");
-      assert.equal(result.position, 1, "Position does not match expected 1");
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.equal(result?.title, "G 7", "Title does not match expected G 7");
+      assert.equal(result?.position, 1, "Position does not match expected 1");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
     test("parses E dom 7 with finger numbers (Unicode format)", () => {
@@ -715,16 +717,16 @@ describe("stringToFingering", () => {
         "Fingering does not match expected E dom 7 chord with finger numbers"
       );
       assert.equal(
-        result.title,
+        result?.title,
         "E dom 7",
         "Title does not match expected E dom 7"
       );
       assert.equal(
-        result.position,
+        result?.position,
         undefined,
         "Position does not match expected undefined"
       );
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
   });
 
@@ -780,16 +782,16 @@ describe("stringToFingering", () => {
         "Fingering does not match expected A minor chord"
       );
       assert.equal(
-        result.title,
+        result?.title,
         "",
         "Title should be empty"
       );
       assert.equal(
-        result.position,
+        result?.position,
         undefined,
         "Position does not match expected undefined"
       );
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
     test("handles all open strings", () => {
@@ -814,16 +816,16 @@ describe("stringToFingering", () => {
         "Fingering does not match expected E major"
       );
       assert.equal(
-        result.title,
+        result?.title,
         "E major",
         "Title does not match expected E major"
       );
       assert.equal(
-        result.position,
+        result?.position,
         undefined,
         "Position does not match expected undefined"
       );
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
     test("handles all muted strings", () => {
@@ -847,16 +849,16 @@ describe("stringToFingering", () => {
         "Fingering does not match expected Muted strings"
       );
       assert.equal(
-        result.title,
+        result?.title,
         "Muted",
         "Title does not match expected Muted"
       );
       assert.equal(
-        result.position,
+        result?.position,
         undefined,
         "Position does not match expected undefined"
       );
-      assert.deepEqual(result.barres, [], "Barres should be empty");
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
   test("handles no indications for open strings", () => {
@@ -872,17 +874,16 @@ describe("stringToFingering", () => {
         "Fingering does not match expected Muted strings"
       );
       assert.equal(
-        result.title,
+        result?.title,
         "Muted",
         "Title does not match expected Muted"
       );
       assert.equal(
-        result.position,
+        result?.position,
         undefined,
         "Position does not match expected undefined"
       );
-      assert.deepEqual(result.barres, [], "Barres should be empty");
-
+      assert.deepEqual(result?.barres, [], "Barres should be empty");
     });
 
   });
