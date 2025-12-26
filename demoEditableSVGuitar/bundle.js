@@ -2,40 +2,6 @@
 function fingeringToString(chord, options = {}) {
   const { useUnicode = false } = options;
   const { fingers = [], title = "", position: position2 } = chord;
-  if (fingers.length === 0) {
-    if (title) {
-      const titleLine = `  ${title}`;
-      if (useUnicode) {
-        return `${titleLine}
-  \u2552\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2555
-  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
-  \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524
-  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
-  \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524
-  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
-  \u2514\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2518`;
-      } else {
-        return `${titleLine}
-  ||||||
-  ||||||
-  ||||||`;
-      }
-    } else {
-      if (useUnicode) {
-        return `  \u2552\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2555
-  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
-  \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524
-  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
-  \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524
-  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
-  \u2514\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2518`;
-      } else {
-        return `  ||||||
-  ||||||
-  ||||||`;
-      }
-    }
-  }
   const stringData = /* @__PURE__ */ new Map();
   let maxFret = 0;
   const openStrings = /* @__PURE__ */ new Set();
@@ -80,8 +46,9 @@ function fingeringToString(chord, options = {}) {
 function buildAsciiOutput(title, stringData, openStrings, mutedStrings, numFrets, position2) {
   var _a8;
   const lines = [];
-  const titleLine = title ? `  ${title}` : ` `;
-  lines.push(titleLine);
+  if (title) {
+    lines.push(title ? `  ${title}` : ` `);
+  }
   if (openStrings.size > 0 || mutedStrings.size > 0) {
     let openLine = "  ";
     let lowestMarked = 6;
@@ -130,8 +97,9 @@ function buildAsciiOutput(title, stringData, openStrings, mutedStrings, numFrets
 function buildUnicodeOutput(title, stringData, openStrings, mutedStrings, numFrets, position2) {
   var _a8;
   const lines = [];
-  const titleLine = title ? `  ${title}` : ` `;
-  lines.push(titleLine);
+  if (title) {
+    lines.push(title ? `  ${title}` : ` `);
+  }
   if (openStrings.size > 0 || mutedStrings.size > 0) {
     let openLine = "  ";
     let lowestMarked = 6;
@@ -156,10 +124,10 @@ function buildUnicodeOutput(title, stringData, openStrings, mutedStrings, numFre
     }
     lines.push(openLine);
   }
-  lines.push("  \u2552\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2555");
+  lines.push(position2 === 1 ? "  \u2552\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2555" : "  \u250C\u2500\u252C\u2500\u252C\u2500\u252C\u2500\u252C\u2500\u2510");
   for (let fret = 1; fret <= numFrets; fret++) {
     let line = "";
-    if (fret === 1 && position2 !== void 0) {
+    if (fret === 1 && position2 !== void 0 && position2 > 1) {
       line = position2 < 10 ? ` ${position2}` : `${position2}`;
     } else {
       line = "  ";
