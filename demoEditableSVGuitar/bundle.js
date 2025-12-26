@@ -8385,8 +8385,8 @@ function layoutChordStrings(strings, columns = 3, spacing = 1) {
         const lines = colIdx < row.length ? row[colIdx] : [];
         const line = lineIdx < lines.length ? lines[lineIdx] : "";
         if (!useFixedSpacing && colIdx < columns - 1 && colIdx < columnWidths.length - 1) {
-          const padWidth = Math.max(columnWidths[colIdx] + 1, columnWidths[colIdx + 1] + 1);
-          lineParts.push(line.padEnd(padWidth));
+          const padWidth = Math.max(columnWidths[colIdx], columnWidths[colIdx + 1]);
+          lineParts.push(line.padEnd(padWidth + spacing));
         } else {
           lineParts.push(line.padEnd(columnWidths[colIdx]));
         }
