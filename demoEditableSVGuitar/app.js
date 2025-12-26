@@ -36,5 +36,23 @@ document.getElementById('clear')?.addEventListener('click', () => {
   updateJSON();
 });
 
+document.getElementById('copy-json')?.addEventListener('click', () => {
+  navigator.clipboard.writeText(output.textContent || '').catch(err => {
+    console.error('Failed to copy JSON:', err);
+  });
+});
+
+document.getElementById('copy-ascii')?.addEventListener('click', () => {
+  navigator.clipboard.writeText(outputAscii.textContent || '').catch(err => {
+    console.error('Failed to copy ASCII:', err);
+  });
+});
+
+document.getElementById('copy-unicode')?.addEventListener('click', () => {
+  navigator.clipboard.writeText(outputUnicode.textContent || '').catch(err => {
+    console.error('Failed to copy Unicode:', err);
+  });
+});
+
 // Initial panel fill
 updateJSON();
