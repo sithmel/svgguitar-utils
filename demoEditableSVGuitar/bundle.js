@@ -2,13 +2,11 @@
 function fingeringToString(chord, options = {}) {
   const { useUnicode = false } = options;
   const { fingers = [], title = "", position: position2 } = chord;
-  if (fingers.length === 0 && !title) {
-    return "";
-  }
-  if (fingers.length === 0 && title) {
-    const titleLine = title ? `  ${title}` : ` `;
-    if (useUnicode) {
-      return `${titleLine}
+  if (fingers.length === 0) {
+    if (title) {
+      const titleLine = `  ${title}`;
+      if (useUnicode) {
+        return `${titleLine}
   \u2552\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2555
   \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
   \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524
@@ -16,11 +14,26 @@ function fingeringToString(chord, options = {}) {
   \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524
   \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
   \u2514\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2518`;
-    } else {
-      return `${titleLine}
+      } else {
+        return `${titleLine}
   ||||||
   ||||||
   ||||||`;
+      }
+    } else {
+      if (useUnicode) {
+        return `  \u2552\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2555
+  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
+  \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524
+  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
+  \u251C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u253C\u2500\u2524
+  \u2502 \u2502 \u2502 \u2502 \u2502 \u2502
+  \u2514\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2534\u2500\u2518`;
+      } else {
+        return `  ||||||
+  ||||||
+  ||||||`;
+      }
     }
   }
   const stringData = /* @__PURE__ */ new Map();
@@ -65,7 +78,7 @@ function fingeringToString(chord, options = {}) {
   }
 }
 function buildAsciiOutput(title, stringData, openStrings, mutedStrings, numFrets, position2) {
-  var _a5;
+  var _a8;
   const lines = [];
   const titleLine = title ? `  ${title}` : ` `;
   lines.push(titleLine);
@@ -92,17 +105,17 @@ function buildAsciiOutput(title, stringData, openStrings, mutedStrings, numFrets
   for (let fret = 1; fret <= numFrets; fret++) {
     let line = "";
     if (fret === 1 && position2 !== void 0) {
-      line = `${position2} `;
+      line = position2 < 10 ? ` ${position2}` : `${position2}`;
     } else {
       line = "  ";
     }
     for (let str = 6; str >= 1; str--) {
-      const fingerInfo = (_a5 = stringData.get(str)) == null ? void 0 : _a5.get(fret);
+      const fingerInfo = (_a8 = stringData.get(str)) == null ? void 0 : _a8.get(fret);
       if (fingerInfo) {
         if (fingerInfo.color !== "#000000") {
           line += "*";
         } else if (fingerInfo.text) {
-          line += fingerInfo.text;
+          line += fingerInfo.text[0];
         } else {
           line += "o";
         }
@@ -115,7 +128,7 @@ function buildAsciiOutput(title, stringData, openStrings, mutedStrings, numFrets
   return lines.join("\n");
 }
 function buildUnicodeOutput(title, stringData, openStrings, mutedStrings, numFrets, position2) {
-  var _a5;
+  var _a8;
   const lines = [];
   const titleLine = title ? `  ${title}` : ` `;
   lines.push(titleLine);
@@ -147,17 +160,17 @@ function buildUnicodeOutput(title, stringData, openStrings, mutedStrings, numFre
   for (let fret = 1; fret <= numFrets; fret++) {
     let line = "";
     if (fret === 1 && position2 !== void 0) {
-      line = `${position2} `;
+      line = position2 < 10 ? ` ${position2}` : `${position2}`;
     } else {
       line = "  ";
     }
     for (let str = 6; str >= 1; str--) {
-      const fingerInfo = (_a5 = stringData.get(str)) == null ? void 0 : _a5.get(fret);
+      const fingerInfo = (_a8 = stringData.get(str)) == null ? void 0 : _a8.get(fret);
       if (fingerInfo) {
         if (fingerInfo.color !== "#000000") {
           line += "\u25CF";
         } else if (fingerInfo.text) {
-          line += fingerInfo.text;
+          line += fingerInfo.text[0];
         } else {
           line += "\u25CB";
         }
@@ -1238,8 +1251,8 @@ var Renderer = (
         curY = radius + radius * Math.sin(a2 * Math.PI / 180);
         points.push([curX, curY]);
       }
-      var lines = points.reduce(function(acc, _a5) {
-        var _b = __read(_a5, 2), posX = _b[0], posY = _b[1];
+      var lines = points.reduce(function(acc, _a8) {
+        var _b = __read(_a8, 2), posX = _b[0], posY = _b[1];
         return "".concat(acc, " L").concat(posX, " ").concat(posY);
       }, "");
       return "M".concat(curX, " ").concat(curY, " ").concat(lines);
@@ -1285,7 +1298,7 @@ var RoughJsRenderer = (
     RoughJsRenderer2.prototype.embedDefs = function() {
       var _this = this;
       setTimeout(function() {
-        var _a5, _b, _c;
+        var _a8, _b, _c;
         if (_this.svgNode.querySelector("defs [data-svguitar-def]")) {
           return;
         }
@@ -1296,7 +1309,7 @@ var RoughJsRenderer = (
         }
         var template = document.createElement("template");
         template.innerHTML = defs.trim();
-        var defsToAdd = (_c = (_b = (_a5 = template.content.firstChild) === null || _a5 === void 0 ? void 0 : _a5.firstChild) === null || _b === void 0 ? void 0 : _b.parentElement) === null || _c === void 0 ? void 0 : _c.children;
+        var defsToAdd = (_c = (_b = (_a8 = template.content.firstChild) === null || _a8 === void 0 ? void 0 : _a8.firstChild) === null || _b === void 0 ? void 0 : _b.parentElement) === null || _c === void 0 ? void 0 : _c.children;
         if (defsToAdd) {
           Array.from(defsToAdd).forEach(function(def) {
             def.setAttribute("data-svguitar-def", "true");
@@ -1311,7 +1324,7 @@ var RoughJsRenderer = (
       this.svgNode.appendChild(titleEl);
     };
     RoughJsRenderer2.prototype.circle = function(x2, y2, diameter, strokeWidth, strokeColor, fill, classes2) {
-      var _a5;
+      var _a8;
       var options = {
         fill: fill || "none",
         fillWeight: 2.5,
@@ -1322,7 +1335,7 @@ var RoughJsRenderer = (
         options.strokeWidth = strokeWidth;
       }
       var circle = this.rc.circle(x2 + diameter / 2, y2 + diameter / 2, diameter, options);
-      (_a5 = circle.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+      (_a8 = circle.classList).add.apply(_a8, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       this.svgNode.appendChild(circle);
       return RoughJsRenderer2.boxToElement(circle.getBBox(), function() {
         return circle ? circle.remove() : void 0;
@@ -1339,7 +1352,7 @@ var RoughJsRenderer = (
       this.svgNode.remove();
     };
     RoughJsRenderer2.prototype.line = function(x1, y1, x2, y2, strokeWidth, color, classes2) {
-      var _a5;
+      var _a8;
       if (strokeWidth > 5 && (x1 - x2 === 0 || y1 - y2 === 0)) {
         if (Math.abs(x1 - x2) > Math.abs(y1 - y2)) {
           this.rect(x1, y1, x2 - x1, strokeWidth, 0, color, color);
@@ -1351,12 +1364,12 @@ var RoughJsRenderer = (
           strokeWidth,
           stroke: color
         });
-        (_a5 = line.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+        (_a8 = line.classList).add.apply(_a8, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
         this.svgNode.appendChild(line);
       }
     };
     RoughJsRenderer2.prototype.rect = function(x2, y2, width2, height2, strokeWidth, strokeColor, classes2, fill, radius) {
-      var _a5, _b;
+      var _a8, _b;
       var rect2 = this.rc.rectangle(x2, y2, width2, height2, {
         // fill: fill || 'none',
         fill: "none",
@@ -1377,7 +1390,7 @@ var RoughJsRenderer = (
         roughness: 1.5
       });
       rect.setAttribute("transform", "translate(".concat(x2, ", ").concat(y2, ")"));
-      (_a5 = rect.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+      (_a8 = rect.classList).add.apply(_a8, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       (_b = rect2.classList).add.apply(_b, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       this.svgNode.appendChild(rect);
       this.svgNode.appendChild(rect2);
@@ -1386,7 +1399,7 @@ var RoughJsRenderer = (
       });
     };
     RoughJsRenderer2.prototype.triangle = function(x2, y2, size2, strokeWidth, strokeColor, classes2, fill) {
-      var _a5;
+      var _a8;
       var triangle = this.rc.path(Renderer.trianglePath(0, 0, size2), {
         fill: fill || "none",
         fillWeight: 2.5,
@@ -1394,14 +1407,14 @@ var RoughJsRenderer = (
         roughness: 1.5
       });
       triangle.setAttribute("transform", "translate(".concat(x2, ", ").concat(y2, ")"));
-      (_a5 = triangle.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+      (_a8 = triangle.classList).add.apply(_a8, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       this.svgNode.appendChild(triangle);
       return RoughJsRenderer2.boxToElement(triangle.getBBox(), function() {
         return triangle.remove();
       });
     };
     RoughJsRenderer2.prototype.pentagon = function(x2, y2, size2, strokeWidth, strokeColor, fill, classes2, spikes) {
-      var _a5;
+      var _a8;
       if (spikes === void 0) {
         spikes = 5;
       }
@@ -1412,7 +1425,7 @@ var RoughJsRenderer = (
         roughness: 1.5
       });
       pentagon.setAttribute("transform", "translate(".concat(x2, ", ").concat(y2, ")"));
-      (_a5 = pentagon.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+      (_a8 = pentagon.classList).add.apply(_a8, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       this.svgNode.appendChild(pentagon);
       return RoughJsRenderer2.boxToElement(pentagon.getBBox(), function() {
         return pentagon.remove();
@@ -1429,7 +1442,7 @@ var RoughJsRenderer = (
       this.svgNode.insertBefore(bg, this.svgNode.firstChild);
     };
     RoughJsRenderer2.prototype.text = function(text, x2, y2, fontSize, color, fontFamily, alignment, classes2, plain2) {
-      var _a5;
+      var _a8;
       var txtElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
       txtElem.setAttributeNS(null, "x", String(x2));
       txtElem.setAttributeNS(null, "y", String(y2));
@@ -1457,7 +1470,7 @@ var RoughJsRenderer = (
         default:
           throw new Error("Invalid alignment ".concat(alignment));
       }
-      (_a5 = txtElem.classList).add.apply(_a5, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
+      (_a8 = txtElem.classList).add.apply(_a8, __spreadArray([], __read(RoughJsRenderer2.toClassArray(classes2)), false));
       txtElem.setAttributeNS(null, "x", String(x2 + xOffset));
       txtElem.setAttributeNS(null, "y", String(y2 + (plain2 ? 0 : bbox2.height / 2)));
       return RoughJsRenderer2.boxToElement(txtElem.getBBox(), txtElem.remove.bind(txtElem));
@@ -2048,16 +2061,16 @@ var Color = class _Color {
     } else if (typeof a2 === "string") {
       if (isRgb.test(a2)) {
         const noWhitespace = a2.replace(whitespace, "");
-        const [_a6, _b2, _c2] = rgb.exec(noWhitespace).slice(1, 4).map((v2) => parseInt(v2));
-        Object.assign(this, { _a: _a6, _b: _b2, _c: _c2, _d: 0, space: "rgb" });
+        const [_a9, _b2, _c2] = rgb.exec(noWhitespace).slice(1, 4).map((v2) => parseInt(v2));
+        Object.assign(this, { _a: _a9, _b: _b2, _c: _c2, _d: 0, space: "rgb" });
       } else if (isHex.test(a2)) {
         const hexParse = (v2) => parseInt(v2, 16);
-        const [, _a6, _b2, _c2] = hex.exec(sixDigitHex(a2)).map(hexParse);
-        Object.assign(this, { _a: _a6, _b: _b2, _c: _c2, _d: 0, space: "rgb" });
+        const [, _a9, _b2, _c2] = hex.exec(sixDigitHex(a2)).map(hexParse);
+        Object.assign(this, { _a: _a9, _b: _b2, _c: _c2, _d: 0, space: "rgb" });
       } else throw Error("Unsupported string format, can't construct Color");
     }
-    const { _a: _a5, _b, _c, _d } = this;
-    const components = this.space === "rgb" ? { r: _a5, g: _b, b: _c } : this.space === "xyz" ? { x: _a5, y: _b, z: _c } : this.space === "hsl" ? { h: _a5, s: _b, l: _c } : this.space === "lab" ? { l: _a5, a: _b, b: _c } : this.space === "lch" ? { l: _a5, c: _b, h: _c } : this.space === "cmyk" ? { c: _a5, m: _b, y: _c, k: _d } : {};
+    const { _a: _a8, _b, _c, _d } = this;
+    const components = this.space === "rgb" ? { r: _a8, g: _b, b: _c } : this.space === "xyz" ? { x: _a8, y: _b, z: _c } : this.space === "hsl" ? { h: _a8, s: _b, l: _c } : this.space === "lab" ? { l: _a8, a: _b, b: _c } : this.space === "lch" ? { l: _a8, c: _b, h: _c } : this.space === "cmyk" ? { c: _a8, m: _b, y: _c, k: _d } : {};
     Object.assign(this, components);
   }
   /*
@@ -2159,8 +2172,8 @@ var Color = class _Color {
     return color;
   }
   hsl() {
-    const { _a: _a5, _b, _c } = this.rgb();
-    const [r2, g2, b2] = [_a5, _b, _c].map((v2) => v2 / 255);
+    const { _a: _a8, _b, _c } = this.rgb();
+    const [r2, g2, b2] = [_a8, _b, _c].map((v2) => v2 / 255);
     const max = Math.max(r2, g2, b2);
     const min = Math.min(r2, g2, b2);
     const l2 = (max + min) / 2;
@@ -2172,8 +2185,8 @@ var Color = class _Color {
     return color;
   }
   cmyk() {
-    const { _a: _a5, _b, _c } = this.rgb();
-    const [r2, g2, b2] = [_a5, _b, _c].map((v2) => v2 / 255);
+    const { _a: _a8, _b, _c } = this.rgb();
+    const [r2, g2, b2] = [_a8, _b, _c].map((v2) => v2 / 255);
     const k2 = Math.min(1 - r2, 1 - g2, 1 - b2);
     if (k2 === 1) {
       return new _Color(0, 0, 0, 1, "cmyk");
@@ -2188,10 +2201,10 @@ var Color = class _Color {
   Input and Output methods
   */
   _clamped() {
-    const { _a: _a5, _b, _c } = this.rgb();
+    const { _a: _a8, _b, _c } = this.rgb();
     const { max, min, round } = Math;
     const format = (v2) => max(0, min(round(v2), 255));
-    return [_a5, _b, _c].map(format);
+    return [_a8, _b, _c].map(format);
   }
   toHex() {
     const [r2, g2, b2] = this._clamped().map(componentHex);
@@ -2206,8 +2219,8 @@ var Color = class _Color {
     return string;
   }
   toArray() {
-    const { _a: _a5, _b, _c, _d, space } = this;
-    return [_a5, _b, _c, _d, space];
+    const { _a: _a8, _b, _c, _d, space } = this;
+    return [_a8, _b, _c, _d, space];
   }
   /*
   Generating random colors
@@ -6739,23 +6752,23 @@ var SVGuitarChord = (
       });
     }
     SVGuitarChord2.plugin = function(plugin) {
-      var _a5;
+      var _a8;
       var currentPlugins = this.plugins;
-      var BaseWithPlugins = (_a5 = /** @class */
+      var BaseWithPlugins = (_a8 = /** @class */
       (function(_super) {
         __extends(class_1, _super);
         function class_1() {
           return _super !== null && _super.apply(this, arguments) || this;
         }
         return class_1;
-      })(this), _a5.plugins = currentPlugins.concat(plugin), _a5);
+      })(this), _a8.plugins = currentPlugins.concat(plugin), _a8);
       return BaseWithPlugins;
     };
     Object.defineProperty(SVGuitarChord2.prototype, "renderer", {
       get: function() {
-        var _a5;
+        var _a8;
         if (!this.rendererInternal) {
-          var style = (_a5 = this.settings.style) !== null && _a5 !== void 0 ? _a5 : defaultSettings.style;
+          var style = (_a8 = this.settings.style) !== null && _a8 !== void 0 ? _a8 : defaultSettings.style;
           switch (style) {
             case ChordStyle.normal:
               this.rendererInternal = new SvgJsRenderer(this.container);
@@ -6786,14 +6799,14 @@ var SVGuitarChord = (
       return this;
     };
     SVGuitarChord2.prototype.draw = function() {
-      var _a5;
+      var _a8;
       this.clear();
       this.drawBackground();
       if (this.settings.svgTitle) {
         this.renderer.title(this.settings.svgTitle);
       }
       var y2;
-      y2 = this.drawTitle((_a5 = this.settings.titleFontSize) !== null && _a5 !== void 0 ? _a5 : defaultSettings.titleFontSize);
+      y2 = this.drawTitle((_a8 = this.settings.titleFontSize) !== null && _a8 !== void 0 ? _a8 : defaultSettings.titleFontSize);
       y2 = this.drawEmptyStringIndicators(y2);
       y2 = this.drawTopFret(y2);
       this.drawPosition(y2);
@@ -6835,11 +6848,11 @@ var SVGuitarChord = (
     };
     SVGuitarChord2.prototype.drawTunings = function(y2) {
       var _this = this;
-      var _a5, _b, _c, _d, _e;
+      var _a8, _b, _c, _d, _e;
       var padding = this.fretSpacing() / 5;
       var stringXPositions = this.stringXPos();
       var strings = this.numStrings();
-      var color = (_b = (_a5 = this.settings.tuningsColor) !== null && _a5 !== void 0 ? _a5 : this.settings.color) !== null && _b !== void 0 ? _b : defaultSettings.color;
+      var color = (_b = (_a8 = this.settings.tuningsColor) !== null && _a8 !== void 0 ? _a8 : this.settings.color) !== null && _b !== void 0 ? _b : defaultSettings.color;
       var tuning = (_c = this.settings.tuning) !== null && _c !== void 0 ? _c : defaultSettings.tuning;
       var fontFamily = (_d = this.settings.fontFamily) !== null && _d !== void 0 ? _d : defaultSettings.fontFamily;
       var tuningsFontSize = (_e = this.settings.tuningsFontSize) !== null && _e !== void 0 ? _e : defaultSettings.tuningsFontSize;
@@ -6847,7 +6860,7 @@ var SVGuitarChord = (
       tuning.forEach(function(tuning_, i) {
         if (i < strings) {
           var classNames = [ElementType.TUNING, "".concat(ElementType.TUNING, "-").concat(i)];
-          var _a6 = _this.coordinates(stringXPositions[i], y2 + padding), textX = _a6.x, textY = _a6.y;
+          var _a9 = _this.coordinates(stringXPositions[i], y2 + padding), textX = _a9.x, textY = _a9.y;
           var tuningText = _this.renderer.text(tuning_, textX, textY, tuningsFontSize, color, fontFamily, Alignment.MIDDLE, classNames, true);
           if (tuning_) {
             text = tuningText;
@@ -6860,12 +6873,12 @@ var SVGuitarChord = (
       return y2;
     };
     SVGuitarChord2.prototype.drawWatermark = function(y2) {
-      var _a5, _b, _c, _d, _e, _f;
+      var _a8, _b, _c, _d, _e, _f;
       if (!this.settings.watermark) {
         return y2;
       }
       var padding = this.fretSpacing() / 5;
-      var orientation = (_a5 = this.settings.orientation) !== null && _a5 !== void 0 ? _a5 : defaultSettings.orientation;
+      var orientation = (_a8 = this.settings.orientation) !== null && _a8 !== void 0 ? _a8 : defaultSettings.orientation;
       var stringXPositions = this.stringXPos();
       var endX = stringXPositions[stringXPositions.length - 1];
       var startX = stringXPositions[0];
@@ -6888,8 +6901,8 @@ var SVGuitarChord = (
     };
     SVGuitarChord2.prototype.drawPosition = function(y2) {
       var _this = this;
-      var _a5, _b, _c, _d, _e, _f, _g, _h, _j;
-      var position2 = (_b = (_a5 = this.chordInternal.position) !== null && _a5 !== void 0 ? _a5 : this.settings.position) !== null && _b !== void 0 ? _b : defaultSettings.position;
+      var _a8, _b, _c, _d, _e, _f, _g, _h, _j;
+      var position2 = (_b = (_a8 = this.chordInternal.position) !== null && _a8 !== void 0 ? _a8 : this.settings.position) !== null && _b !== void 0 ? _b : defaultSettings.position;
       var noPosition = (_c = this.settings.noPosition) !== null && _c !== void 0 ? _c : defaultSettings.noPosition;
       if (position2 <= 1 || noPosition) {
         return;
@@ -6937,8 +6950,8 @@ var SVGuitarChord = (
       this.renderer.text(text, textX, textY, size2, color, fontFamily, Alignment.MIDDLE, className, true);
     };
     SVGuitarChord2.prototype.drawTopEdges = function(y2) {
-      var _a5;
-      var orientation = (_a5 = this.settings.orientation) !== null && _a5 !== void 0 ? _a5 : defaultSettings.orientation;
+      var _a8;
+      var orientation = (_a8 = this.settings.orientation) !== null && _a8 !== void 0 ? _a8 : defaultSettings.orientation;
       var xTopRight = orientation === Orientation.vertical ? constants.width : y2;
       this.renderer.circle(0, 0, 0, 0, "transparent", "none", "top-left");
       this.renderer.circle(xTopRight, 0, 0, 0, "transparent", "none", "top-right");
@@ -6949,9 +6962,9 @@ var SVGuitarChord = (
       }
     };
     SVGuitarChord2.prototype.drawTopFret = function(y2) {
-      var _a5, _b, _c, _d, _e, _f, _g, _h;
+      var _a8, _b, _c, _d, _e, _f, _g, _h;
       var stringXpositions = this.stringXPos();
-      var strokeWidth = (_a5 = this.settings.strokeWidth) !== null && _a5 !== void 0 ? _a5 : defaultSettings.strokeWidth;
+      var strokeWidth = (_a8 = this.settings.strokeWidth) !== null && _a8 !== void 0 ? _a8 : defaultSettings.strokeWidth;
       var nutWidth = (_c = (_b = this.settings.topFretWidth) !== null && _b !== void 0 ? _b : this.settings.nutWidth) !== null && _c !== void 0 ? _c : defaultSettings.nutWidth;
       var startX = stringXpositions[0] - strokeWidth / 2;
       var endX = stringXpositions[stringXpositions.length - 1] + strokeWidth / 2;
@@ -6970,9 +6983,9 @@ var SVGuitarChord = (
       return y2 + fretSize;
     };
     SVGuitarChord2.prototype.stringXPos = function() {
-      var _a5;
+      var _a8;
       var strings = this.numStrings();
-      var sidePadding = (_a5 = this.settings.sidePadding) !== null && _a5 !== void 0 ? _a5 : defaultSettings.sidePadding;
+      var sidePadding = (_a8 = this.settings.sidePadding) !== null && _a8 !== void 0 ? _a8 : defaultSettings.sidePadding;
       var startX = constants.width * sidePadding;
       var stringsSpacing = this.stringSpacing();
       return range(strings).map(function(i) {
@@ -6980,16 +6993,16 @@ var SVGuitarChord = (
       });
     };
     SVGuitarChord2.prototype.numStrings = function() {
-      var _a5;
-      return (_a5 = this.settings.strings) !== null && _a5 !== void 0 ? _a5 : defaultSettings.strings;
+      var _a8;
+      return (_a8 = this.settings.strings) !== null && _a8 !== void 0 ? _a8 : defaultSettings.strings;
     };
     SVGuitarChord2.prototype.numFrets = function() {
-      var _a5;
-      return (_a5 = this.settings.frets) !== null && _a5 !== void 0 ? _a5 : defaultSettings.frets;
+      var _a8;
+      return (_a8 = this.settings.frets) !== null && _a8 !== void 0 ? _a8 : defaultSettings.frets;
     };
     SVGuitarChord2.prototype.stringSpacing = function() {
-      var _a5;
-      var sidePadding = (_a5 = this.settings.sidePadding) !== null && _a5 !== void 0 ? _a5 : defaultSettings.sidePadding;
+      var _a8;
+      var sidePadding = (_a8 = this.settings.sidePadding) !== null && _a8 !== void 0 ? _a8 : defaultSettings.sidePadding;
       var strings = this.numStrings();
       var startX = constants.width * sidePadding;
       var endX = constants.width - startX;
@@ -6997,9 +7010,9 @@ var SVGuitarChord = (
       return width2 / (strings - 1);
     };
     SVGuitarChord2.prototype.fretSpacing = function() {
-      var _a5;
+      var _a8;
       var stringSpacing = this.stringSpacing();
-      var fretSize = (_a5 = this.settings.fretSize) !== null && _a5 !== void 0 ? _a5 : defaultSettings.fretSize;
+      var fretSize = (_a8 = this.settings.fretSize) !== null && _a8 !== void 0 ? _a8 : defaultSettings.fretSize;
       return stringSpacing * fretSize;
     };
     SVGuitarChord2.prototype.fretLinesYPos = function(startY) {
@@ -7015,28 +7028,28 @@ var SVGuitarChord = (
     };
     SVGuitarChord2.prototype.drawEmptyStringIndicators = function(y2) {
       var _this = this;
-      var _a5, _b, _c;
+      var _a8, _b, _c;
       var stringXPositions = this.stringXPos();
       var stringSpacing = this.stringSpacing();
-      var emptyStringIndicatorSize = (_a5 = this.settings.emptyStringIndicatorSize) !== null && _a5 !== void 0 ? _a5 : defaultSettings.emptyStringIndicatorSize;
+      var emptyStringIndicatorSize = (_a8 = this.settings.emptyStringIndicatorSize) !== null && _a8 !== void 0 ? _a8 : defaultSettings.emptyStringIndicatorSize;
       var size2 = emptyStringIndicatorSize * stringSpacing;
       var padding = size2 / 3;
       var color = (_b = this.settings.color) !== null && _b !== void 0 ? _b : defaultSettings.color;
       var strokeWidth = (_c = this.settings.strokeWidth) !== null && _c !== void 0 ? _c : defaultSettings.strokeWidth;
       var hasEmpty = false;
-      this.chordInternal.fingers.filter(function(_a6) {
-        var _b2 = __read(_a6, 2), value = _b2[1];
+      this.chordInternal.fingers.filter(function(_a9) {
+        var _b2 = __read(_a9, 2), value = _b2[1];
         return value === SILENT || value === OPEN;
-      }).map(function(_a6) {
-        var _b2 = __read(_a6, 3), index = _b2[0], value = _b2[1], textOrOptions = _b2[2];
+      }).map(function(_a9) {
+        var _b2 = __read(_a9, 3), index = _b2[0], value = _b2[1], textOrOptions = _b2[2];
         return [
           _this.toArrayIndex(index),
           value,
           textOrOptions
         ];
-      }).forEach(function(_a6) {
+      }).forEach(function(_a9) {
         var _b2, _c2, _d, _e, _f, _g;
-        var _h = __read(_a6, 3), stringIndex = _h[0], value = _h[1], textOrOptions = _h[2];
+        var _h = __read(_a9, 3), stringIndex = _h[0], value = _h[1], textOrOptions = _h[2];
         hasEmpty = true;
         var fingerOptions = SVGuitarChord2.getFingerOptions(textOrOptions);
         var effectiveStrokeWidth = (_b2 = fingerOptions.strokeWidth) !== null && _b2 !== void 0 ? _b2 : strokeWidth;
@@ -7074,9 +7087,9 @@ var SVGuitarChord = (
     };
     SVGuitarChord2.prototype.drawGrid = function(y2) {
       var _this = this;
-      var _a5, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
+      var _a8, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
       var frets = this.numFrets();
-      var fretSize = (_a5 = this.settings.fretSize) !== null && _a5 !== void 0 ? _a5 : defaultSettings.fretSize;
+      var fretSize = (_a8 = this.settings.fretSize) !== null && _a8 !== void 0 ? _a8 : defaultSettings.fretSize;
       var relativeFingerSize = (_b = this.settings.fingerSize) !== null && _b !== void 0 ? _b : defaultSettings.fingerSize;
       var stringXPositions = this.stringXPos();
       var fretYPositions = this.fretLinesYPos(y2);
@@ -7095,19 +7108,19 @@ var SVGuitarChord = (
       var fingerTextSize = (_l = this.settings.fingerTextSize) !== null && _l !== void 0 ? _l : defaultSettings.fingerTextSize;
       fretYPositions.forEach(function(fretY, i) {
         var classNames = [ElementType.FRET, "".concat(ElementType.FRET, "-").concat(i)];
-        var _a6 = _this.coordinates(startX, fretY), lineX1 = _a6.x, lineY1 = _a6.y;
+        var _a9 = _this.coordinates(startX, fretY), lineX1 = _a9.x, lineY1 = _a9.y;
         var _b2 = _this.coordinates(endX, fretY), lineX2 = _b2.x, lineY2 = _b2.y;
         _this.renderer.line(lineX1, lineY1, lineX2, lineY2, strokeWidth, fretColor, classNames);
       });
       stringXPositions.forEach(function(stringX, i) {
         var classNames = [ElementType.STRING, "".concat(ElementType.STRING, "-").concat(i)];
-        var _a6 = _this.coordinates(stringX, y2), lineX1 = _a6.x, lineY1 = _a6.y;
+        var _a9 = _this.coordinates(stringX, y2), lineX1 = _a9.x, lineY1 = _a9.y;
         var _b2 = _this.coordinates(stringX, y2 + height2 + strokeWidth / 2), lineX2 = _b2.x, lineY2 = _b2.y;
         _this.renderer.line(lineX1, lineY1, lineX2, lineY2, strokeWidth, fretColor, classNames);
       });
-      this.chordInternal.barres.forEach(function(_a6) {
+      this.chordInternal.barres.forEach(function(_a9) {
         var _b2, _c2, _d2, _e2;
-        var fret = _a6.fret, fromString = _a6.fromString, toString = _a6.toString, text = _a6.text, color = _a6.color, textColor = _a6.textColor, strokeColor = _a6.strokeColor, className = _a6.className, individualBarreChordStrokeWidth = _a6.strokeWidth;
+        var fret = _a9.fret, fromString = _a9.fromString, toString = _a9.toString, text = _a9.text, color = _a9.color, textColor = _a9.textColor, strokeColor = _a9.strokeColor, className = _a9.className, individualBarreChordStrokeWidth = _a9.strokeWidth;
         var barreCenterY = fretYPositions[fret - 1] - strokeWidth / 4 - fretSpacing / 2;
         var fromStringX = stringXPositions[_this.toArrayIndex(fromString)];
         var distance = Math.abs(toString - fromString) * stringSpacing;
@@ -7127,18 +7140,18 @@ var SVGuitarChord = (
           _this.renderer.text(text, textX, textY, fingerTextSize, textColor !== null && textColor !== void 0 ? textColor : fingerTextColor, fontFamily, Alignment.MIDDLE, textClassNames, true);
         }
       });
-      this.chordInternal.fingers.filter(function(_a6) {
-        var _b2 = __read(_a6, 2), value = _b2[1];
+      this.chordInternal.fingers.filter(function(_a9) {
+        var _b2 = __read(_a9, 2), value = _b2[1];
         return value !== SILENT && value !== OPEN;
-      }).map(function(_a6) {
-        var _b2 = __read(_a6, 3), stringIndex = _b2[0], fretIndex = _b2[1], text = _b2[2];
+      }).map(function(_a9) {
+        var _b2 = __read(_a9, 3), stringIndex = _b2[0], fretIndex = _b2[1], text = _b2[2];
         return [
           _this.toArrayIndex(stringIndex),
           fretIndex,
           text
         ];
-      }).forEach(function(_a6) {
-        var _b2 = __read(_a6, 3), stringIndex = _b2[0], fretIndex = _b2[1], textOrOptions = _b2[2];
+      }).forEach(function(_a9) {
+        var _b2 = __read(_a9, 3), stringIndex = _b2[0], fretIndex = _b2[1], textOrOptions = _b2[2];
         var fingerCenterX = startX + stringIndex * stringSpacing;
         var fingerCenterY = y2 + fretIndex * fretSpacing - fretSpacing / 2;
         var fingerOptions = SVGuitarChord2.getFingerOptions(textOrOptions);
@@ -7152,7 +7165,7 @@ var SVGuitarChord = (
       });
       if ((_m = this.settings.showFretMarkers) !== null && _m !== void 0 ? _m : defaultSettings.showFretMarkers) {
         (_o = this.settings.fretMarkers) === null || _o === void 0 ? void 0 : _o.forEach(function(fretMarker) {
-          var _a6, _b2, _c2, _d2, _e2;
+          var _a9, _b2, _c2, _d2, _e2;
           var fretMarkerOptions = typeof fretMarker == "number" ? {
             fret: fretMarker
           } : fretMarker;
@@ -7162,7 +7175,7 @@ var SVGuitarChord = (
           var fretMarkerIndex = fretMarkerOptions.fret;
           var fretMarkerCenterX = constants.width / 2;
           var fretMarkerCenterY = y2 + (fretMarkerIndex + 1) * fretSpacing - fretSpacing / 2;
-          var fretMarkerSize = (_a6 = _this.settings.fretMarkerSize) !== null && _a6 !== void 0 ? _a6 : defaultSettings.fretMarkerSize;
+          var fretMarkerSize = (_a9 = _this.settings.fretMarkerSize) !== null && _a9 !== void 0 ? _a9 : defaultSettings.fretMarkerSize;
           var fretMarkerColor = (_b2 = _this.settings.fretMarkerColor) !== null && _b2 !== void 0 ? _b2 : defaultSettings.fretMarkerColor;
           var classNames = __spreadArray([
             ElementType.FRET_MARKER,
@@ -7183,9 +7196,9 @@ var SVGuitarChord = (
       return y2 + height2;
     };
     SVGuitarChord2.prototype.drawFretMarker = function(x2, y2, size2, color, fretMarketOptions, classNames) {
-      var _a5, _b, _c, _d, _e, _f, _g, _h;
+      var _a8, _b, _c, _d, _e, _f, _g, _h;
       var markerOptions = typeof fretMarketOptions === "number" ? { fret: fretMarketOptions } : fretMarketOptions;
-      var shape = (_a5 = markerOptions.shape) !== null && _a5 !== void 0 ? _a5 : defaultSettings.fretMarkerShape;
+      var shape = (_a8 = markerOptions.shape) !== null && _a8 !== void 0 ? _a8 : defaultSettings.fretMarkerShape;
       var fretMarkerColor = (_c = (_b = markerOptions.color) !== null && _b !== void 0 ? _b : this.settings.fretMarkerColor) !== null && _c !== void 0 ? _c : defaultSettings.fretMarkerColor;
       var fretMarkerStrokeColor = (_e = (_d = markerOptions.strokeColor) !== null && _d !== void 0 ? _d : this.settings.fretMarkerStrokeColor) !== null && _e !== void 0 ? _e : color;
       var fretMarkerStrokeWidth = (_g = (_f = markerOptions.strokeWidth) !== null && _f !== void 0 ? _f : this.settings.fretMarkerStrokeWidth) !== null && _g !== void 0 ? _g : 0;
@@ -7197,8 +7210,8 @@ var SVGuitarChord = (
       this.drawShape(shape, x0, y0, fretMarkerSize, fretMarkerStrokeWidth, fretMarkerStrokeColor, fretMarkerColor !== null && fretMarkerColor !== void 0 ? fretMarkerColor : color, classNamesWithShape);
     };
     SVGuitarChord2.prototype.drawFinger = function(x2, y2, size2, color, textSize, fontFamily, fingerOptions, classNames) {
-      var _a5, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
-      var shape = (_a5 = fingerOptions.shape) !== null && _a5 !== void 0 ? _a5 : defaultSettings.shape;
+      var _a8, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+      var shape = (_a8 = fingerOptions.shape) !== null && _a8 !== void 0 ? _a8 : defaultSettings.shape;
       var fingerTextColor = (_c = (_b = fingerOptions.textColor) !== null && _b !== void 0 ? _b : this.settings.fingerTextColor) !== null && _c !== void 0 ? _c : defaultSettings.fingerTextColor;
       var fingerStrokeColor = (_g = (_f = (_e = (_d = fingerOptions.strokeColor) !== null && _d !== void 0 ? _d : this.settings.fingerStrokeColor) !== null && _e !== void 0 ? _e : this.settings.fingerColor) !== null && _f !== void 0 ? _f : this.settings.color) !== null && _g !== void 0 ? _g : defaultSettings.color;
       var fingerStrokeWidth = (_j = (_h = fingerOptions.strokeWidth) !== null && _h !== void 0 ? _h : this.settings.fingerStrokeWidth) !== null && _j !== void 0 ? _j : defaultSettings.fingerStrokeWidth;
@@ -7234,8 +7247,8 @@ var SVGuitarChord = (
       }
     };
     SVGuitarChord2.prototype.drawTitle = function(size2) {
-      var _a5, _b, _c, _d, _e;
-      var color = (_a5 = this.settings.color) !== null && _a5 !== void 0 ? _a5 : defaultSettings.color;
+      var _a8, _b, _c, _d, _e;
+      var color = (_a8 = this.settings.color) !== null && _a8 !== void 0 ? _a8 : defaultSettings.color;
       var titleBottomMargin = (_b = this.settings.titleBottomMargin) !== null && _b !== void 0 ? _b : defaultSettings.titleBottomMargin;
       var fontFamily = (_c = this.settings.fontFamily) !== null && _c !== void 0 ? _c : defaultSettings.fontFamily;
       var title = (_e = (_d = this.chordInternal.title) !== null && _d !== void 0 ? _d : this.settings.title) !== null && _e !== void 0 ? _e : this.settings.fixedDiagramPosition ? "X" : "";
@@ -7312,8 +7325,8 @@ var SVGuitarChord = (
     };
     Object.defineProperty(SVGuitarChord2.prototype, "orientation", {
       get: function() {
-        var _a5;
-        return (_a5 = this.settings.orientation) !== null && _a5 !== void 0 ? _a5 : defaultSettings.orientation;
+        var _a8;
+        return (_a8 = this.settings.orientation) !== null && _a8 !== void 0 ? _a8 : defaultSettings.orientation;
       },
       enumerable: false,
       configurable: true
@@ -7409,8 +7422,9 @@ var EditableSVGuitarChord = class {
     titleLabel.style.cssText = "display: block; margin-bottom: 5px; font-weight: bold;";
     this.titleInput = document.createElement("input");
     this.titleInput.type = "text";
-    this.titleInput.placeholder = "e.g., A min, G7";
-    this.titleInput.style.cssText = "width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;";
+    this.titleInput.placeholder = "e.g. A min";
+    this.titleInput.maxLength = 10;
+    this.titleInput.style.cssText = "width: 10em; padding: 6px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;";
     titleLabel.appendChild(this.titleInput);
     titleSection.appendChild(titleLabel);
     const positionSection = document.createElement("div");
@@ -7423,7 +7437,7 @@ var EditableSVGuitarChord = class {
     this.positionInput.min = "1";
     this.positionInput.max = "30";
     this.positionInput.placeholder = "1-30";
-    this.positionInput.style.cssText = "width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;";
+    this.positionInput.style.cssText = "width: 5em; padding: 6px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;";
     positionLabel.appendChild(this.positionInput);
     positionSection.appendChild(positionLabel);
     const buttonDiv = document.createElement("div");
@@ -7784,13 +7798,13 @@ var EditableSVGuitarChord = class {
    * @param {number} fret
    */
   editDot(string, fret) {
-    var _a5, _b;
+    var _a8, _b;
     const finger = this.chordConfig.fingers.find(([s2, f2]) => s2 === string && f2 === fret);
     if (!finger) return;
     this.currentEditFinger = finger;
     this.currentEditString = string;
     this.currentEditFret = fret;
-    const currentColor = typeof finger[2] === "object" && ((_a5 = finger[2]) == null ? void 0 : _a5.color) || DOT_COLORS.BLACK;
+    const currentColor = typeof finger[2] === "object" && ((_a8 = finger[2]) == null ? void 0 : _a8.color) || DOT_COLORS.BLACK;
     const currentText = typeof finger[2] === "object" && ((_b = finger[2]) == null ? void 0 : _b.text) || "";
     const normalizedColor = currentColor === DOT_COLORS.RED ? DOT_COLORS.RED : DOT_COLORS.BLACK;
     this.redRadio.checked = normalizedColor === DOT_COLORS.RED;
@@ -8098,6 +8112,275 @@ var EditableSVGuitarChord = class {
   }
 };
 
+// lib/splitStringInRectangles.js
+function splitStringInRectangles(str) {
+  if (!str || str.trim() === "") {
+    return [];
+  }
+  const grid = str.split("\n").map((line) => line.split(""));
+  const result = [];
+  const directions = [
+    [-1, -1],
+    [-1, 0],
+    [-1, 1],
+    [0, -1],
+    [0, 1],
+    [1, -1],
+    [1, 0],
+    [1, 1]
+  ];
+  function bfs(startRow, startCol) {
+    const queue = [[startRow, startCol]];
+    const positions = [[startRow, startCol]];
+    let minRow = startRow;
+    let maxRow = startRow;
+    let minCol = startCol;
+    let maxCol = startCol;
+    grid[startRow][startCol] = " ";
+    while (queue.length > 0) {
+      const [row, col] = queue.shift();
+      for (const [dr, dc] of directions) {
+        const newRow = row + dr;
+        const newCol = col + dc;
+        if (newRow >= 0 && newRow < grid.length && newCol >= 0 && newCol < grid[newRow].length) {
+          if (grid[newRow][newCol] !== " ") {
+            queue.push([newRow, newCol]);
+            positions.push([newRow, newCol]);
+            minRow = Math.min(minRow, newRow);
+            maxRow = Math.max(maxRow, newRow);
+            minCol = Math.min(minCol, newCol);
+            maxCol = Math.max(maxCol, newCol);
+            grid[newRow][newCol] = " ";
+          }
+        }
+      }
+    }
+    return { minRow, maxRow, minCol, maxCol, positions };
+  }
+  function extractRectangle(bounds) {
+    const { minRow, maxRow, minCol, maxCol, positions } = bounds;
+    const height2 = maxRow - minRow + 1;
+    const width2 = maxCol - minCol + 1;
+    const rectGrid = Array(height2).fill(null).map(() => Array(width2).fill(" "));
+    for (const [row, col] of positions) {
+      const relRow = row - minRow;
+      const relCol = col - minCol;
+      const lines = str.split("\n");
+      if (row < lines.length && col < lines[row].length) {
+        rectGrid[relRow][relCol] = lines[row][col];
+      }
+    }
+    return rectGrid.map((row) => row.join("")).join("\n");
+  }
+  for (let row = 0; row < grid.length; row++) {
+    for (let col = 0; col < grid[row].length; col++) {
+      if (grid[row][col] !== " ") {
+        const bounds = bfs(row, col);
+        const rectangle = extractRectangle(bounds);
+        result.push(rectangle);
+      }
+    }
+  }
+  return result;
+}
+
+// lib/stringToFingering.js
+var ASCII_VERTICAL = "|";
+var ASCII_OPEN = "o";
+var ASCII_MUTED = "x";
+var ASCII_ROOT = "*";
+var UNICODE_VERTICAL = "\u2502";
+var UNICODE_OPEN = "\u25CB";
+var UNICODE_MUTED = "\xD7";
+var UNICODE_ROOT = "\u25CF";
+var UNICODE_BOX_CHARS = "\u2552\u2550\u2564\u2555\u251C\u2500\u253C\u2524\u2514\u2534\u2518";
+function isUnicodeFormat(str) {
+  return str.includes(UNICODE_VERTICAL) || str.includes(UNICODE_OPEN) || str.includes(UNICODE_ROOT) || str.includes(UNICODE_MUTED) || [...UNICODE_BOX_CHARS].some((c2) => str.includes(c2));
+}
+function findUnicodeGridBoundaries(lines, firstGridRowIdx) {
+  let minPos = Infinity;
+  let maxPos = -1;
+  for (let i = firstGridRowIdx; i < lines.length; i++) {
+    const line = lines[i];
+    for (let j2 = 0; j2 < line.length; j2++) {
+      const char = line[j2];
+      if (char === UNICODE_VERTICAL || "\u2552\u2564\u2555\u251C\u253C\u2524\u2514\u2534\u2518\u2550\u2500".includes(char)) {
+        if (j2 < minPos) minPos = j2;
+        if (j2 > maxPos) maxPos = j2;
+      }
+    }
+  }
+  if (minPos === Infinity || maxPos === -1) {
+    return { startCol: 0, endCol: 0, numStrings: 0 };
+  }
+  const numStrings = Math.floor((maxPos - minPos) / 2) + 1;
+  return { startCol: minPos, endCol: maxPos, numStrings };
+}
+function unicodeCharPosToStringNum(charPos, startCol, numStrings) {
+  const offset = charPos - startCol;
+  if (offset < 0 || offset % 2 !== 0) return -1;
+  const idx = offset / 2;
+  if (idx >= numStrings) return -1;
+  return numStrings - idx;
+}
+function findAsciiGridBoundaries(lines, firstGridRowIdx) {
+  let minPos = Infinity;
+  let maxPos = -1;
+  for (let i = firstGridRowIdx; i < lines.length; i++) {
+    const line = lines[i];
+    for (let j2 = 0; j2 < line.length; j2++) {
+      if (line[j2] === ASCII_VERTICAL) {
+        if (j2 < minPos) minPos = j2;
+        if (j2 > maxPos) maxPos = j2;
+      }
+    }
+  }
+  if (minPos === Infinity || maxPos === -1) {
+    return { startCol: 0, endCol: 0, numStrings: 0 };
+  }
+  const numStrings = maxPos - minPos + 1;
+  return { startCol: minPos, endCol: maxPos, numStrings };
+}
+function asciiCharPosToStringNumber(charPos, startCol, numStrings) {
+  const offset = charPos - startCol;
+  if (offset < 0 || offset >= numStrings) return -1;
+  return numStrings - offset;
+}
+function isGridRow(line, isUnicode) {
+  if (isUnicode) {
+    let count = 0;
+    for (const char of line) {
+      if (char === UNICODE_VERTICAL || "\u2552\u2564\u2555\u251C\u253C\u2524\u2514\u2534\u2518".includes(char)) count++;
+    }
+    return count >= 2;
+  } else {
+    let count = 0;
+    for (const char of line) {
+      if (char === ASCII_VERTICAL) count++;
+    }
+    return count >= 2;
+  }
+}
+function isUnicodeFretRow(line) {
+  return line.includes(UNICODE_VERTICAL);
+}
+function stringToFingering(fingeringStr, options = {}) {
+  const { redColor = "#e74c3c", blackColor = "#000000" } = options;
+  if (!fingeringStr || fingeringStr.trim() === "") {
+    return { fingers: [], barres: [] };
+  }
+  const lines = fingeringStr.split("\n");
+  const isUnicode = isUnicodeFormat(fingeringStr);
+  const openChar = isUnicode ? UNICODE_OPEN : ASCII_OPEN;
+  const mutedChar = isUnicode ? UNICODE_MUTED : ASCII_MUTED;
+  const rootChar = isUnicode ? UNICODE_ROOT : ASCII_ROOT;
+  const fingers = [];
+  let title;
+  let position2;
+  let firstGridRowIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (isGridRow(lines[i], isUnicode)) {
+      firstGridRowIdx = i;
+      break;
+    }
+  }
+  if (firstGridRowIdx === -1) {
+    return { fingers: [], barres: [] };
+  }
+  let startCol = 0;
+  let numStrings = 6;
+  if (isUnicode) {
+    const bounds = findUnicodeGridBoundaries(lines, firstGridRowIdx);
+    startCol = bounds.startCol;
+    numStrings = bounds.numStrings;
+    if (numStrings === 0) {
+      return { fingers: [], barres: [] };
+    }
+  } else {
+    const bounds = findAsciiGridBoundaries(lines, firstGridRowIdx);
+    startCol = bounds.startCol;
+    numStrings = bounds.numStrings;
+    if (numStrings === 0) {
+      return { fingers: [], barres: [] };
+    }
+  }
+  const getStringNumber = (charPos) => {
+    if (isUnicode) {
+      return unicodeCharPosToStringNum(charPos, startCol, numStrings);
+    } else {
+      return asciiCharPosToStringNumber(charPos, startCol, numStrings);
+    }
+  };
+  for (let i = 0; i < firstGridRowIdx; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    if (trimmed === "") continue;
+    const indicatorPattern = isUnicode ? /^[\s○×0-9]*$/ : /^[\s oxOX0-9]*$/;
+    if (!indicatorPattern.test(trimmed)) {
+      title = trimmed;
+      break;
+    }
+  }
+  if (title === void 0) {
+    title = "";
+  }
+  const indicatorLineIdx = firstGridRowIdx - 1;
+  if (indicatorLineIdx >= 0) {
+    const indicatorLine = lines[indicatorLineIdx];
+    for (let i = 0; i < indicatorLine.length; i++) {
+      const char = indicatorLine[i];
+      const stringNum = getStringNumber(i);
+      if (stringNum <= 0) continue;
+      if (char === openChar || !isUnicode && char === ASCII_OPEN) {
+        fingers.push([stringNum, 0, { text: "", color: blackColor }]);
+      } else if (char === mutedChar || !isUnicode && char === ASCII_MUTED) {
+        fingers.push([stringNum, "x", { text: "", color: blackColor }]);
+      }
+    }
+  }
+  let fretNumber = 1;
+  let isFirstFretRow = true;
+  for (let lineIdx = firstGridRowIdx; lineIdx < lines.length; lineIdx++) {
+    const line = lines[lineIdx];
+    if (!isGridRow(line, isUnicode)) continue;
+    if (isUnicode && !isUnicodeFretRow(line)) continue;
+    if (isFirstFretRow) {
+      const posMatch = line.match(/^(\d{1,2})\s/);
+      if (posMatch) {
+        position2 = parseInt(posMatch[1], 10);
+      }
+      isFirstFretRow = false;
+    }
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (isUnicode) {
+        if (char === UNICODE_VERTICAL || "\u2552\u2550\u2564\u2555\u251C\u2500\u253C\u2524\u2514\u2534\u2518".includes(char) || char === " ") continue;
+      } else {
+        if (char === ASCII_VERTICAL || char === " ") continue;
+      }
+      const stringNum = getStringNumber(i);
+      if (stringNum <= 0) continue;
+      if (char === rootChar) {
+        fingers.push([stringNum, fretNumber, { text: "", color: redColor }]);
+      } else if (char === UNICODE_OPEN || char === ASCII_OPEN) {
+        fingers.push([stringNum, fretNumber, { text: "", color: blackColor }]);
+      } else if (/[0-9]/.test(char)) {
+        fingers.push([stringNum, fretNumber, { text: char, color: blackColor }]);
+      }
+    }
+    fretNumber++;
+  }
+  const result = {
+    fingers,
+    barres: [],
+    title
+  };
+  if (position2 !== void 0) {
+    result.position = position2;
+  }
+  return result;
+}
+
 // demoEditableSVGuitar/app.js
 var editor = (
   /** @type {HTMLElement} */
@@ -8151,4 +8434,63 @@ var _a4;
   });
 });
 updateJSON();
+var _a5;
+(_a5 = document.getElementById("tab-editor")) == null ? void 0 : _a5.addEventListener("click", () => {
+  var _a8, _b, _c, _d;
+  (_a8 = document.getElementById("tab-editor")) == null ? void 0 : _a8.classList.add("active");
+  (_b = document.getElementById("tab-batch")) == null ? void 0 : _b.classList.remove("active");
+  (_c = document.getElementById("interactive-editor")) == null ? void 0 : _c.classList.add("active");
+  (_d = document.getElementById("batch-converter")) == null ? void 0 : _d.classList.remove("active");
+});
+var _a6;
+(_a6 = document.getElementById("tab-batch")) == null ? void 0 : _a6.addEventListener("click", () => {
+  var _a8, _b, _c, _d;
+  (_a8 = document.getElementById("tab-batch")) == null ? void 0 : _a8.classList.add("active");
+  (_b = document.getElementById("tab-editor")) == null ? void 0 : _b.classList.remove("active");
+  (_c = document.getElementById("batch-converter")) == null ? void 0 : _c.classList.add("active");
+  (_d = document.getElementById("interactive-editor")) == null ? void 0 : _d.classList.remove("active");
+});
+var _a7;
+(_a7 = document.getElementById("convert-btn")) == null ? void 0 : _a7.addEventListener("click", () => {
+  const textarea = (
+    /** @type {HTMLTextAreaElement} */
+    document.getElementById("batch-input")
+  );
+  const chordGrid = document.getElementById("chord-grid");
+  if (!textarea || !chordGrid) {
+    console.error("Required elements not found");
+    return;
+  }
+  const input = textarea.value;
+  if (!input.trim()) {
+    console.warn("No input provided");
+    return;
+  }
+  try {
+    chordGrid.innerHTML = "";
+    const rectangles = splitStringInRectangles(input);
+    if (rectangles.length === 0) {
+      console.warn("No chord diagrams found in input");
+      return;
+    }
+    console.log(`Found ${rectangles.length} chord diagram(s)`);
+    rectangles.forEach((rectangle, index) => {
+      try {
+        const chordConfig = stringToFingering(rectangle);
+        const container = document.createElement("div");
+        container.className = "chord-container";
+        chordGrid.appendChild(container);
+        const chart = new SVGuitarChord(container);
+        const frets = Math.max(...chordConfig.fingers.map((f2) => typeof f2[1] === "number" ? f2[1] : 0), 3);
+        const noPosition = chordConfig.position === 0 || chordConfig.position === void 0;
+        console.log(chordConfig, noPosition, frets);
+        chart.chord(chordConfig).configure({ frets, noPosition }).draw();
+      } catch (err) {
+        console.error(`Error rendering chord ${index + 1}:`, err);
+      }
+    });
+  } catch (err) {
+    console.error("Error during batch conversion:", err);
+  }
+});
 //# sourceMappingURL=bundle.js.map

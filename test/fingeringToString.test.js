@@ -78,7 +78,34 @@ describe("fingeringToString", () => {
 
       const expected = `  G 7
   xx  
-5 ||*|||
+ 5||*|||
+  ||||o|
+  |||o|o`;
+
+      assert.equal(result, expected);
+    });
+
+    test("outputs G7 chord with starting with 2 digits fret number", () => {
+      /** @type {import("svguitar").Chord} */
+      const chord = {
+        fingers: [
+          [6, "x", { text: "", color: "#000000" }],
+          [5, "x", { text: "", color: "#000000" }],
+          [4, 1, { text: "", color: "#e74c3c" }],
+          [2, 2, { text: "", color: "#000000" }],
+          [3, 3, { text: "", color: "#000000" }],
+          [1, 3, { text: "", color: "#000000" }],
+        ],
+        barres: [],
+        title: "G 7",
+        position: 15,
+      };
+
+      const result = fingeringToString(chord);
+
+      const expected = `  G 7
+  xx  
+15||*|||
   ||||o|
   |||o|o`;
 
@@ -194,7 +221,38 @@ describe("fingeringToString", () => {
       const expected = `  G 7
   × ×
   ╒═╤═╤═╤═╤═╕
-5 │ │ ● │ │ │
+ 5│ │ ● │ │ │
+  ├─┼─┼─┼─┼─┤
+  │ │ │ │ ○ │
+  ├─┼─┼─┼─┼─┤
+  │ │ │ ○ │ ○
+  └─┴─┴─┴─┴─┘`;
+
+      assert.equal(result, expected);
+    });
+
+    test("outputs G7 chord with starting 2 digits starting fret (Unicode format)", () => {
+      /** @type {import("svguitar").Chord} */
+      const chord = {
+        fingers: [
+          [6, "x", { text: "", color: "#000000" }],
+          [5, "x", { text: "", color: "#000000" }],
+          [4, 1, { text: "", color: "#e74c3c" }],
+          [2, 2, { text: "", color: "#000000" }],
+          [3, 3, { text: "", color: "#000000" }],
+          [1, 3, { text: "", color: "#000000" }],
+        ],
+        barres: [],
+        title: "G 7",
+        position: 15,
+      };
+
+      const result = fingeringToString(chord, { useUnicode: true });
+
+      const expected = `  G 7
+  × ×
+  ╒═╤═╤═╤═╤═╕
+15│ │ ● │ │ │
   ├─┼─┼─┼─┼─┤
   │ │ │ │ ○ │
   ├─┼─┼─┼─┼─┤
@@ -244,8 +302,30 @@ describe("fingeringToString", () => {
       };
 
       const result = fingeringToString(chord);
+      const expected = `  ||||||
+  ||||||
+  ||||||`;
 
-      assert.equal(result, "");
+      assert.equal(result, expected);
+    });
+
+    test("handles empty chord (unicode)", () => {
+      /** @type {import("svguitar").Chord} */
+      const chord = {
+        fingers: [],
+        barres: [],
+      };
+
+      const result = fingeringToString(chord, { useUnicode: true });
+      const expected = `  ╒═╤═╤═╤═╤═╕
+  │ │ │ │ │ │
+  ├─┼─┼─┼─┼─┤
+  │ │ │ │ │ │
+  ├─┼─┼─┼─┼─┤
+  │ │ │ │ │ │
+  └─┴─┴─┴─┴─┘`;
+
+      assert.equal(result, expected);
     });
 
     test("handles chord with no title", () => {
