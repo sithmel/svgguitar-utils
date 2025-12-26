@@ -3,6 +3,7 @@ import { EditableSVGuitarChord } from '../lib/editableSVGuitar.js';
 import { SVGuitarChord } from 'svguitar';
 import splitStringInRectangles from '../lib/splitStringInRectangles.js';
 import stringToFingering from '../lib/stringToFingering.js';
+import layoutChordStrings from '../lib/layoutChordStrings.js';
 
 /** @type {HTMLElement} */
 const editor = /** @type {HTMLElement} */(document.getElementById('editor'));
@@ -103,7 +104,7 @@ document.getElementById('convert-btn')?.addEventListener('click', () => {
       return;
     }
 
-    console.log(`Found ${rectangles.length} chord diagram(s)`);
+    console.log(`Found ${rectangles.length} chord diagram(s)`, rectangles);
 
     // Convert each rectangle to a chord and render
     rectangles.forEach((rectangle, index) => {
@@ -131,4 +132,41 @@ document.getElementById('convert-btn')?.addEventListener('click', () => {
   } catch (err) {
     console.error('Error during batch conversion:', err);
   }
+});
+
+/**
+ * 
+ * @param {number} columnNumber 
+ */
+function layout (columnNumber){
+  const textarea = /** @type {HTMLTextAreaElement} */(document.getElementById('batch-input'));
+    if (!textarea) {
+    console.error('Required elements not found');
+    return;
+  }
+
+  const input = textarea.value;
+  if (!input.trim()) {
+    console.warn('No input provided');
+    return;
+  }
+  // Split input into rectangles
+  const rectangles = splitStringInRectangles(input);
+  const layout = layoutChordStrings(rectangles, columnNumber, 3);
+  textarea.value = layout;
+}
+
+// Batch conversion
+document.getElementById('layout-2-btn')?.addEventListener('click', () => {
+  layout(2);
+});
+
+// Batch conversion
+document.getElementById('layout-3-btn')?.addEventListener('click', () => {
+  layout(3);
+});
+
+// Batch conversion
+document.getElementById('layout-4-btn')?.addEventListener('click', () => {
+  layout(4);
 });

@@ -60,6 +60,27 @@ C  D`;
     assert.equal(result, expected);
   });
 
+  test("layouts strings into multiple rows with spacing 2", () => {
+    const strings = ["A", "B", "C", "D"];
+    const result = layoutChordStrings(strings, 2, 2);
+    const expected = `A   B
+
+
+C   D`;
+    assert.equal(result, expected);
+  });
+
+  test("layouts strings into multiple rows with spacing 3", () => {
+    const strings = ["A", "B", "C", "D"];
+    const result = layoutChordStrings(strings, 2, 3);
+    const expected = `A    B
+
+
+
+C    D`;
+    assert.equal(result, expected);
+  });
+
   test("layouts strings into multiple rows with different sizes", () => {
     const strings = ["ABC\nDEF", "12", "XY\nZ", "!"];
     const result = layoutChordStrings(strings, 2);

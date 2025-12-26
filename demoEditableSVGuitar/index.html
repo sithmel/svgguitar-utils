@@ -24,7 +24,7 @@
      #batch-converter.active , #interactive-editor.active { display:block; }
      #batch-input { width:100%; min-width:800px; height:300px; font-family:monospace; font-size:13px; line-height:1; padding:10px; border:1px solid #ccc; border-radius:4px; resize:vertical; }
      #chord-grid { display:flex; flex-wrap:wrap; gap:24px; margin-top:20px; }
-     .chord-container { min-width:180px; flex:1 1 auto; max-width:220px; }
+     .chord-container { width:220px; }
   </style>
   <script type="module" src="./bundle.js"></script>
 </head>
@@ -79,6 +79,9 @@
     <textarea id="batch-input" placeholder="Paste chord diagrams here (ASCII or Unicode format)..."></textarea>
     <div class="toolbar">
       <button id="convert-btn" type="button" class="primary">Convert to SVG</button>
+      <button id="layout-2-btn" type="button" class="secondary">Layout in 2 columns</button>
+      <button id="layout-3-btn" type="button" class="secondary">Layout in 3 columns</button>
+      <button id="layout-4-btn" type="button" class="secondary">Layout in 4 columns</button>
     </div>
     <div id="chord-grid"></div>
   </div>
