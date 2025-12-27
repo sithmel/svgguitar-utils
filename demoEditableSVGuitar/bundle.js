@@ -47,8 +47,9 @@ function buildAsciiOutput(title, stringData, openStrings, mutedStrings, numFrets
   var _a11;
   const lines = [];
   if (title && title.length > 0) {
-    lines.push(`  ${title}`);
-    lines.push(`  ######`);
+    const clampedTitle = title.length > 15 ? title.slice(0, 15) : title;
+    lines.push(`  ${clampedTitle}`);
+    lines.push(`  ${"#".repeat(Math.max(6, clampedTitle.length))}`);
   }
   if (openStrings.size > 0 || mutedStrings.size > 0) {
     let openLine = "  ";
@@ -100,8 +101,9 @@ function buildUnicodeOutput(title, stringData, openStrings, mutedStrings, numFre
   var _a11;
   const lines = [];
   if (title && title.length > 0) {
-    lines.push(`  ${title}`);
-    lines.push(`  \u203E\u203E\u203E\u203E\u203E\u203E\u203E\u203E\u203E\u203E\u203E`);
+    const clampedTitle = title.length > 15 ? title.slice(0, 15) : title;
+    lines.push(`  ${clampedTitle}`);
+    lines.push(`  ${"\u203E".repeat(Math.max(11, clampedTitle.length))}`);
   }
   if (openStrings.size > 0 || mutedStrings.size > 0) {
     let openLine = "  ";
