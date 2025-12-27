@@ -24,7 +24,9 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  A min
+  ######
   oo   o
+  ------
   ||||o|
   ||o*||
   ||||||`;
@@ -50,7 +52,9 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  D
+  ######
   xoo
+  ------
   ||||||
   |||o|o
   ||||*|`;
@@ -77,7 +81,9 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  G 7
-  xx  
+  ######
+  xx
+  ------
  5||*|||
   ||||o|
   |||o|o`;
@@ -104,8 +110,39 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  G 7
-  xx  
+  ######
+  xx
+  ------
 15||*|||
+  ||||o|
+  |||o|o`;
+
+      assert.equal(result, expected);
+    });
+
+    test("outputs G7 chord with starting with 1 as fret number", () => {
+      /** @type {import("svguitar").Chord} */
+      const chord = {
+        fingers: [
+          [6, "x", { text: "", color: "#000000" }],
+          [5, "x", { text: "", color: "#000000" }],
+          [4, 1, { text: "", color: "#e74c3c" }],
+          [2, 2, { text: "", color: "#000000" }],
+          [3, 3, { text: "", color: "#000000" }],
+          [1, 3, { text: "", color: "#000000" }],
+        ],
+        barres: [],
+        title: "G 7",
+        position: 1,
+      };
+
+      const result = fingeringToString(chord);
+
+      const expected = `  G 7
+  ######
+  xx
+  ======
+  ||*|||
   ||||o|
   |||o|o`;
 
@@ -130,7 +167,9 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  E dom 7
+  ######
   x    x
+  ------
   |||3||
   |51|||
   ||||7|`;
@@ -158,6 +197,7 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord, { useUnicode: true });
 
       const expected = `  A min
+  ‾‾‾‾‾‾‾‾‾‾‾
   ○ ○       ○
   ┌─┬─┬─┬─┬─┐
   │ │ │ │ ○ │
@@ -188,6 +228,7 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord, { useUnicode: true });
 
       const expected = `  D
+  ‾‾‾‾‾‾‾‾‾‾‾
   × ○ ○
   ┌─┬─┬─┬─┬─┐
   │ │ │ │ │ │
@@ -219,6 +260,7 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord, { useUnicode: true });
 
       const expected = `  G 7
+  ‾‾‾‾‾‾‾‾‾‾‾
   × ×
   ┌─┬─┬─┬─┬─┐
  5│ │ ● │ │ │
@@ -250,6 +292,7 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord, { useUnicode: true });
 
       const expected = `  G 7
+  ‾‾‾‾‾‾‾‾‾‾‾
   × ×
   ┌─┬─┬─┬─┬─┐
 15│ │ ● │ │ │
@@ -281,6 +324,7 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord, { useUnicode: true });
 
       const expected = `  G 7
+  ‾‾‾‾‾‾‾‾‾‾‾
   × ×
   ╒═╤═╤═╤═╤═╕
   │ │ ● │ │ │
@@ -311,6 +355,7 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord, { useUnicode: true });
 
       const expected = `  E dom 7
+  ‾‾‾‾‾‾‾‾‾‾‾
   ×         ×
   ┌─┬─┬─┬─┬─┐
   │ │ │ 3 │ │
@@ -333,7 +378,8 @@ describe("fingeringToString", () => {
       };
 
       const result = fingeringToString(chord);
-      const expected = `  ||||||
+      const expected = `  ------
+  ||||||
   ||||||
   ||||||`;
 
@@ -377,6 +423,7 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  oo   o
+  ------
   ||||o|
   ||o*||
   ||||||`;
@@ -402,7 +449,9 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  E major
+  ######
   oooooo
+  ------
   ||||||
   ||||||
   ||||||`;
@@ -428,7 +477,9 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  Muted
+  ######
   xxxxxx
+  ------
   ||||||
   ||||||
   ||||||`;
@@ -447,6 +498,8 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  Muted
+  ######
+  ------
   ||||||
   ||||||
   ||||||`;
@@ -471,6 +524,8 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  Test
+  ######
+  ------
   ||||o|
   ||oo||
   ||||||`;  
@@ -493,6 +548,7 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord, { useUnicode: true });
 
       const expected = `  Test
+  ‾‾‾‾‾‾‾‾‾‾‾
   ┌─┬─┬─┬─┬─┐
   │ │ │ │ ○ │
   ├─┼─┼─┼─┼─┤
@@ -518,6 +574,8 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  Test
+  ######
+  ------
   ||||||
   ||oo||
   ||||||`;
@@ -539,6 +597,8 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  Test
+  ######
+  ------
   ||||||
   ||21||
   ||||||`;
@@ -560,6 +620,8 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  Test
+  ######
+  ------
   ||||||
   ||3*||
   ||||||`;
@@ -581,6 +643,7 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord, { useUnicode: true });
 
       const expected = `  Test
+  ‾‾‾‾‾‾‾‾‾‾‾
   ┌─┬─┬─┬─┬─┐
   │ │ │ │ │ │
   ├─┼─┼─┼─┼─┤
@@ -607,6 +670,8 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  Test
+  ######
+  ------
   ||||||
   |***||
   ||||||`;
@@ -628,6 +693,8 @@ describe("fingeringToString", () => {
       const result = fingeringToString(chord);
 
       const expected = `  Test
+  ######
+  ------
   ||||||
   ||oo||
   ||||||`;

@@ -194,10 +194,10 @@ export class EditableSVGuitarChord {
     }): string;
     /**
      * Register a callback for when the chord changes
-     * @param {Function} callback - Called with updated fingers array
+     * @param {(this: EditableSVGuitarChord) => void} callback - Called with updated fingers array
      * @returns {EditableSVGuitarChord}
      */
-    onChange(callback: Function): EditableSVGuitarChord;
+    onChange(callback: (this: EditableSVGuitarChord) => void): EditableSVGuitarChord;
     /**
      * Trigger the change callback if registered
      */

@@ -4,6 +4,7 @@
  *
  * @param {Array<string>} strings - Array of chord strings (can be multi-line)
  * @param {number} columns - Number of columns per row (default: 3)
- * @returns {string} - Formatted grid layout string
+ * @param {number} spacing - Number of spaces between columns (default: 1)
+* @returns {string} - Formatted grid layout string
  */
-export default function layoutChordStrings(strings: Array<string>, columns?: number): string;
+export default function layoutChordStrings(strings: Array<string>, columns?: number, spacing?: number): string;

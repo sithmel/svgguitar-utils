@@ -46,8 +46,9 @@ function fingeringToString(chord, options = {}) {
 function buildAsciiOutput(title, stringData, openStrings, mutedStrings, numFrets, position2) {
   var _a11;
   const lines = [];
-  if (title) {
-    lines.push(title ? `  ${title}` : ` `);
+  if (title && title.length > 0) {
+    lines.push(`  ${title}`);
+    lines.push(`  ######`);
   }
   if (openStrings.size > 0 || mutedStrings.size > 0) {
     let openLine = "  ";
@@ -67,11 +68,12 @@ function buildAsciiOutput(title, stringData, openStrings, mutedStrings, numFrets
         openLine += " ";
       }
     }
-    lines.push(openLine);
+    lines.push(openLine.trimEnd());
   }
+  lines.push(position2 === 1 ? "  ======" : "  ------");
   for (let fret = 1; fret <= numFrets; fret++) {
     let line = "";
-    if (fret === 1 && position2 !== void 0) {
+    if (fret === 1 && position2 !== void 0 && position2 !== 1) {
       line = position2 < 10 ? ` ${position2}` : `${position2}`;
     } else {
       line = "  ";
@@ -97,8 +99,9 @@ function buildAsciiOutput(title, stringData, openStrings, mutedStrings, numFrets
 function buildUnicodeOutput(title, stringData, openStrings, mutedStrings, numFrets, position2) {
   var _a11;
   const lines = [];
-  if (title) {
-    lines.push(title ? `  ${title}` : ` `);
+  if (title && title.length > 0) {
+    lines.push(`  ${title}`);
+    lines.push(`  \u203E\u203E\u203E\u203E\u203E\u203E\u203E\u203E\u203E\u203E\u203E`);
   }
   if (openStrings.size > 0 || mutedStrings.size > 0) {
     let openLine = "  ";
@@ -109,20 +112,18 @@ function buildUnicodeOutput(title, stringData, openStrings, mutedStrings, numFre
       }
     }
     const showTo = lowestMarked > 4 ? 3 : lowestMarked;
+    const chars = [];
     for (let str = 6; str >= showTo; str--) {
       if (openStrings.has(str)) {
-        openLine += "\u25CB";
+        chars.push("\u25CB");
       } else if (mutedStrings.has(str)) {
-        openLine += "\xD7";
+        chars.push("\xD7");
       } else {
-        openLine += " ";
+        chars.push(" ");
       }
-      if (str > showTo) openLine += " ";
     }
-    if (showTo === 3 && lowestMarked > 4) {
-      openLine = openLine.trimEnd();
-    }
-    lines.push(openLine);
+    openLine += chars.join(" ");
+    lines.push(openLine.trimEnd());
   }
   lines.push(position2 === 1 ? "  \u2552\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2564\u2550\u2555" : "  \u250C\u2500\u252C\u2500\u252C\u2500\u252C\u2500\u252C\u2500\u2510");
   for (let fret = 1; fret <= numFrets; fret++) {
@@ -8154,6 +8155,8 @@ function splitStringInRectangles(str) {
 
 // lib/stringToFingering.js
 var ASCII_VERTICAL = "|";
+var ASCII_DASH = "-";
+var ASCII_EQUALS = "=";
 var ASCII_OPEN = "o";
 var ASCII_MUTED = "x";
 var ASCII_ROOT = "*";
@@ -8196,11 +8199,25 @@ function findAsciiGridBoundaries(lines, firstGridRowIdx) {
   let maxPos = -1;
   for (let i = firstGridRowIdx; i < lines.length; i++) {
     const line = lines[i];
+    let inSequence = false;
+    let seqStart = -1;
     for (let j2 = 0; j2 < line.length; j2++) {
-      if (line[j2] === ASCII_VERTICAL) {
-        if (j2 < minPos) minPos = j2;
-        if (j2 > maxPos) maxPos = j2;
+      const char = line[j2];
+      const isGridChar = char === ASCII_VERTICAL || char === ASCII_DASH || char === ASCII_EQUALS;
+      if (isGridChar && !inSequence) {
+        inSequence = true;
+        seqStart = j2;
+      } else if (!isGridChar && inSequence) {
+        inSequence = false;
+        const seqEnd = j2 - 1;
+        if (seqStart < minPos) minPos = seqStart;
+        if (seqEnd > maxPos) maxPos = seqEnd;
       }
+    }
+    if (inSequence) {
+      const seqEnd = line.length - 1;
+      if (seqStart < minPos) minPos = seqStart;
+      if (seqEnd > maxPos) maxPos = seqEnd;
     }
   }
   if (minPos === Infinity || maxPos === -1) {
@@ -8222,20 +8239,34 @@ function isGridRow(line, isUnicode) {
     }
     return count >= 2;
   } else {
-    let count = 0;
-    for (const char of line) {
-      if (char === ASCII_VERTICAL) count++;
-    }
-    return count >= 2;
+    const hasDashes = /-{4,}/.test(line);
+    const hasEquals = /={4,}/.test(line);
+    if (hasDashes || hasEquals) return true;
+    const pipeCount = (line.match(/\|/g) || []).length;
+    return pipeCount >= 4;
   }
 }
 function isUnicodeFretRow(line) {
-  return line.includes(UNICODE_VERTICAL);
+  if (line.includes(UNICODE_VERTICAL)) return true;
+  const noteChars = [UNICODE_OPEN, UNICODE_ROOT, UNICODE_MUTED];
+  for (const char of line) {
+    if (noteChars.includes(char) || /[0-9]/.test(char)) return true;
+  }
+  return false;
+}
+function isAsciiFretRow(line) {
+  if (/-{4,}/.test(line) || /={4,}/.test(line)) return false;
+  if (line.includes(ASCII_VERTICAL)) return true;
+  const noteChars = [ASCII_OPEN, ASCII_ROOT, ASCII_MUTED];
+  for (const char of line) {
+    if (noteChars.includes(char) || /[0-9]/.test(char)) return true;
+  }
+  return false;
 }
 function stringToFingering(fingeringStr, options = {}) {
   const { redColor = "#e74c3c", blackColor = "#000000" } = options;
   if (!fingeringStr || fingeringStr.trim() === "") {
-    return { fingers: [], barres: [] };
+    return null;
   }
   const lines = fingeringStr.split("\n");
   const isUnicode = isUnicodeFormat(fingeringStr);
@@ -8275,6 +8306,10 @@ function stringToFingering(fingeringStr, options = {}) {
     if (numStrings === 0) {
       return { fingers: [], barres: [] };
     }
+    const firstGridLine = lines[firstGridRowIdx];
+    if (/={4,}/.test(firstGridLine)) {
+      position2 = 1;
+    }
   }
   const getStringNumber = (charPos) => {
     if (isUnicode) {
@@ -8283,12 +8318,15 @@ function stringToFingering(fingeringStr, options = {}) {
       return asciiCharPosToStringNumber(charPos, startCol, numStrings);
     }
   };
-  for (let i = 0; i < firstGridRowIdx; i++) {
+  for (let i = 0; i < firstGridRowIdx - 1; i++) {
     const line = lines[i];
+    const nextLine = lines[i + 1];
     const trimmed = line.trim();
     if (trimmed === "") continue;
-    const indicatorPattern = isUnicode ? /^[\s○×0-9]*$/ : /^[\s oxOX0-9]*$/;
-    if (!indicatorPattern.test(trimmed)) {
+    const asciiSeparatorPattern = /^[\s#]+$/;
+    const unicodeSeparatorPattern = /^[\s‾]+$/;
+    const nextTrimmed = nextLine.trim();
+    if (asciiSeparatorPattern.test(nextTrimmed) || unicodeSeparatorPattern.test(nextTrimmed)) {
       title = trimmed;
       break;
     }
@@ -8314,8 +8352,22 @@ function stringToFingering(fingeringStr, options = {}) {
   let isFirstFretRow = true;
   for (let lineIdx = firstGridRowIdx; lineIdx < lines.length; lineIdx++) {
     const line = lines[lineIdx];
-    if (!isGridRow(line, isUnicode)) continue;
-    if (isUnicode && !isUnicodeFretRow(line)) continue;
+    const isStructuralGridRow = isGridRow(line, isUnicode);
+    let isFretContentRow = false;
+    if (!isStructuralGridRow) {
+      if (isUnicode) {
+        isFretContentRow = isUnicodeFretRow(line);
+      } else {
+        isFretContentRow = isAsciiFretRow(line);
+      }
+    } else {
+      if (isUnicode) {
+        isFretContentRow = isUnicodeFretRow(line);
+      } else {
+        isFretContentRow = isAsciiFretRow(line);
+      }
+    }
+    if (!isFretContentRow) continue;
     if (isFirstFretRow) {
       const posMatch = line.match(/^\s*(\d{1,2})[\s│|]/);
       if (posMatch) {
@@ -8325,13 +8377,13 @@ function stringToFingering(fingeringStr, options = {}) {
     }
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
+      const stringNum = getStringNumber(i);
+      if (stringNum <= 0) continue;
       if (isUnicode) {
         if (char === UNICODE_VERTICAL || "\u2552\u2550\u2564\u2555\u251C\u2500\u253C\u2524\u2514\u2534\u2518\u250C\u252C\u2510".includes(char) || char === " ") continue;
       } else {
         if (char === ASCII_VERTICAL || char === " ") continue;
       }
-      const stringNum = getStringNumber(i);
-      if (stringNum <= 0) continue;
       if (char === rootChar) {
         fingers.push([stringNum, fretNumber, { text: "", color: redColor }]);
       } else if (char === UNICODE_OPEN || char === ASCII_OPEN) {
